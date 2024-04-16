@@ -1,0 +1,38 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../Espressif/frameworks/esp-idf-v5.0.2/components"
+		},
+		{
+			"path": "../../Espressif/frameworks/esp-idf-v5.0.2/examples"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"esp_gap_ble_api.h": "c",
+			"string.h": "c",
+			"projdefs.h": "c",
+			"thread": "c",
+			"system_error": "c",
+			"stdint.h": "c",
+			"numeric": "c",
+			"random": "c",
+			"functional": "c",
+			"bitset": "c",
+			"chrono": "c",
+			"cmath": "c",
+			"complex": "c",
+			"*.tcc": "c",
+			"ble_uart.h": "c",
+			"esp_console.h": "c",
+			"descriptors.h": "c",
+			"i2c.h": "c",
+			"stdio.h": "c",
+			"inv_mpu_dmp_motion_driver.h": "c",
+			"esp_err.h": "c"
+		}
+	}
+}
