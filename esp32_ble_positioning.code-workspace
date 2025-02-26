@@ -4,10 +4,10 @@
 			"path": "."
 		},
 		{
-			"path": "../../Espressif/frameworks/esp-idf-v5.0.2/components"
+			"path": "../../../Espressif/frameworks/esp-idf-v5.4/components"
 		},
 		{
-			"path": "../../Espressif/frameworks/esp-idf-v5.0.2/examples"
+			"path": "../../../Espressif/frameworks/esp-idf-v5.4/examples"
 		}
 	],
 	"settings": {
@@ -32,7 +32,17 @@
 			"i2c.h": "c",
 			"stdio.h": "c",
 			"inv_mpu_dmp_motion_driver.h": "c",
-			"esp_err.h": "c"
-		}
+			"esp_err.h": "c",
+			"ble.h": "c",
+			"esp_bt.h": "c",
+			"cstdint": "c",
+			"cstdlib": "c",
+			"array": "c",
+			"string": "c",
+			"string_view": "c",
+			"ranges": "c",
+			"span": "c"
+		},
+		"todo-tree.tree.scanMode": "current file"
 	}
 }

@@ -1,9 +1,9 @@
 /*
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2024-01-16 15:05:23
- * @LastEditors: Zhenwei Song zhenwei.song@qq.com
- * @LastEditTime: 2024-01-28 13:28:43
- * @FilePath: \esp32\esp32_ble\gatt_server_service_table_modified\main\ble_timer.h
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-02-26 10:55:19
+ * @FilePath: \esp32_ble_positioning\main\ble_timer.h
  * @Description: 仅供学习交流使用
  * Copyright (c) 2024 by Zhenwei Song, All Rights Reserved.
  */
@@ -27,7 +27,7 @@
 #include "freertos/projdefs.h"
 
 #define REFRESH_DOWN_ROUTING_TABLE_TIME 1000 // 影响路由表的维护，定为1s
-#define ADV_TIME 20
+#define ADV_TIME 10
 #define REC_TIME 0
 #define HELLO_TIME 5000
 #define MESSAGE_TIME 5000
@@ -41,6 +41,7 @@
 #define TIME2_TIMER_PERIOD 10000000 // 5 seconds
 #define TIME3_TIMER_PERIOD 10000000 // 10 seconds
 #define TIME4_TIMER_PERIOD 20000000 // 20 seconds
+#define TIME5_TIMER_PERIOD 20000000
 
 extern SemaphoreHandle_t xCountingSemaphore_timeout1;
 extern SemaphoreHandle_t xCountingSemaphore_timeout2;
@@ -49,9 +50,11 @@ extern esp_timer_handle_t ble_time1_timer;
 extern esp_timer_handle_t ble_time2_timer;
 extern esp_timer_handle_t ble_time3_timer;
 extern esp_timer_handle_t ble_time4_timer;
+extern esp_timer_handle_t ble_time5_timer;
 
 extern bool timer1_timeout;
 extern bool timer2_timeout;
+extern bool timer5_timeout;
 
 extern bool timer1_running;
 extern bool timer2_running;
@@ -61,14 +64,14 @@ extern bool entry_network_flag;
 
 void ble_timer_init(void);
 
-void time1_timer_cb(void);
+void time1_timer_cb(void *);
 
-void time2_timer_cb(void);
+void time2_timer_cb(void *);
 
-void time3_timer_cb(void);
+void time3_timer_cb(void *);
 
-void time4_timer_cb(void);
+void time4_timer_cb(void *);
 
-void time5_timer_cb(void);
+void time5_timer_cb(void *);
 
 #endif

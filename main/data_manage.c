@@ -1,9 +1,9 @@
 /*
  * @Author: Zhenwei-Song zhenwei.song@qq.com
  * @Date: 2023-11-13 16:00:10
- * @LastEditors: Zhenwei Song zhenwei.song@qq.com
- * @LastEditTime: 2024-01-28 15:52:27
- * @FilePath: \esp32\esp32_ble\gatt_server_service_table_modified\main\data_manage.c
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-02-26 15:58:30
+ * @FilePath: \esp32_ble_positioning\main\data_manage.c
  * @Description: 仅供学习交流使用
  * Copyright (c) 2023 by Zhenwei-Song, All Rights Reserved.
  */
@@ -21,6 +21,10 @@
 SemaphoreHandle_t xCountingSemaphore_send;
 SemaphoreHandle_t xCountingSemaphore_receive;
 
+#ifdef PRINT_RSSI
+bool print_rssi = false;
+#endif
+
 uint8_t id_774a[ID_LEN] = {119, 74};
 uint8_t id_cae6[ID_LEN] = {202, 230};
 uint8_t id_eb36[ID_LEN] = {235, 54};
@@ -33,34 +37,34 @@ uint8_t threshold_high[QUALITY_LEN] = {THRESHOLD_HIGH_1, THRESHOLD_HIGH_2};
 
 uint8_t threshold_low[QUALITY_LEN] = {THRESHOLD_LOW_1, THRESHOLD_LOW_2};
 
-uint8_t phello_final[PHELLO_FINAL_DATA_LEN] = {PHELLO_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_PHELLO};
+uint8_t phello_final[PHELLO_FINAL_DATA_LEN] = {PHELLO_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_PHELLO};
 
-uint8_t anhsp_final[ANHSP_FINAL_DATA_LEN] = {ANHSP_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_ANHSP};
+uint8_t anhsp_final[ANHSP_FINAL_DATA_LEN] = {ANHSP_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_ANHSP};
 
-uint8_t hsrrep_final[HSRREP_FINAL_DATA_LEN] = {HSRREP_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_HSRREP};
+uint8_t hsrrep_final[HSRREP_FINAL_DATA_LEN] = {HSRREP_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_HSRREP};
 
-uint8_t anrreq_final[ANRREQ_FINAL_DATA_LEN] = {ANRREQ_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_ANRREQ};
+uint8_t anrreq_final[ANRREQ_FINAL_DATA_LEN] = {ANRREQ_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_ANRREQ};
 
-uint8_t anrrep_final[ANRREP_FINAL_DATA_LEN] = {ANRREP_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_ANRREP};
+uint8_t anrrep_final[ANRREP_FINAL_DATA_LEN] = {ANRREP_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_ANRREP};
 
-uint8_t rrer_final[RRER_FINAL_DATA_LEN] = {RRER_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_RRER};
+uint8_t rrer_final[RRER_FINAL_DATA_LEN] = {RRER_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_RRER};
 
-uint8_t message_final[MESSAGE_FINAL_DATA_LEN] = {MESSAGE_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_MESSAGE};
+uint8_t message_final[MESSAGE_FINAL_DATA_LEN] = {MESSAGE_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_MESSAGE};
 
-uint8_t block_message_final[BLOCK_MESSAGE_FINAL_DATA_LEN] = {BLOCK_MESSAGE_FINAL_DATA_LEN - 1, ESP_BLE_AD_TYPE_BLOCK};
+uint8_t block_message_final[BLOCK_MESSAGE_FINAL_DATA_LEN] = {BLOCK_MESSAGE_FINAL_DATA_LEN - 1, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, TYPE_BLOCK};
 
 uint8_t temp_quality_of_mine[QUALITY_LEN] = {0};
 
 uint8_t temp_data_31[FINAL_DATA_LEN] = {0};
 
-uint8_t adv_data_final_for_hello[FINAL_DATA_LEN] = {0};
-uint8_t adv_data_final_for_anhsp[FINAL_DATA_LEN] = {0};
-uint8_t adv_data_final_for_hsrrep[FINAL_DATA_LEN] = {0};
-uint8_t adv_data_final_for_anrreq[FINAL_DATA_LEN] = {0};
-uint8_t adv_data_final_for_anrrep[FINAL_DATA_LEN] = {0};
-uint8_t adv_data_final_for_rrer[FINAL_DATA_LEN] = {0};
-uint8_t adv_data_final_for_message[FINAL_DATA_LEN] = {0};
-uint8_t adv_data_final_for_block_message[FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_hello[HEAD_DATA_LEN + PHELLO_FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_anhsp[HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_hsrrep[HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_anrreq[HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_anrrep[HEAD_DATA_LEN + ANRREP_FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_rrer[HEAD_DATA_LEN + RRER_FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_message[HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN] = {0};
+uint8_t adv_data_final_for_block_message[HEAD_DATA_LEN + BLOCK_MESSAGE_FINAL_DATA_LEN] = {0};
 
 uint8_t adv_data_name_7[HEAD_DATA_LEN] = {
     HEAD_DATA_LEN - 1, ESP_BLE_AD_TYPE_NAME_CMPL, 'O', 'L', 'T', 'H', 'R'};
@@ -93,6 +97,21 @@ uint8_t adv_data_62[62] = {
  * @param {uint8_t} *data2  后段数据段
  * @return {*}  返回拼接后的数据
  */
+#if 1
+uint8_t *data_match(uint8_t *data1, uint8_t *data2, uint8_t data_1_len, uint8_t data_2_len)
+{
+    memset(temp_data_31, 0, data_1_len + data_2_len);
+    if (data_1_len + data_2_len <= FINAL_DATA_LEN) {
+        memcpy(temp_data_31, data1, data_1_len);
+        memcpy(temp_data_31 + data_1_len, data2, data_2_len);
+        return temp_data_31;
+    }
+    else {
+        ESP_LOGE(DATA_TAG, "the length of data error");
+        return NULL;
+    }
+}
+#else
 uint8_t *data_match(uint8_t *data1, uint8_t *data2, uint8_t data_1_len, uint8_t data_2_len)
 {
     memset(temp_data_31, 0, sizeof(temp_data_31) / sizeof(temp_data_31[0]));
@@ -106,7 +125,7 @@ uint8_t *data_match(uint8_t *data1, uint8_t *data2, uint8_t data_1_len, uint8_t 
         return NULL;
     }
 }
-
+#endif
 /**
  * @description: 计算我到邻居节点的链路质量
  * @param {double} SNR_hat
@@ -186,7 +205,9 @@ uint8_t *quality_calculate_from_me_to_neighbor(double SNR_hat)
 /**
  * @description: 计算我通过邻居节点到簇首的链路质量
  * @param {int} rssi
- * @param {uint8_t} *quality_from_upper
+ * @param {uint8_t} *quality_from_u
+ * pper
+
  * @param {uint8_t} distance
  * @return {*}
  */
@@ -305,7 +326,8 @@ uint8_t *generate_phello(p_my_info info)
     phello[12] |= temp_next_id[0]; // next ID
     phello[13] |= temp_next_id[1];
     phello[15] |= info->update; // 最新包号
-    memcpy(phello_final + 2, phello, PHELLO_DATA_LEN);
+    // printf("generating hello\n");
+    memcpy(phello_final + 3, phello, PHELLO_DATA_LEN);
     return phello_final;
 }
 
@@ -384,6 +406,21 @@ void resolve_phello(uint8_t *phello_data, p_my_info info, int rssi)
     esp_log_buffer_hex(DATA_TAG, temp_info->next_id, ID_LEN);
     ESP_LOGI(DATA_TAG, "*********************************************************************************");
 #endif
+    // printf("resolve hello\n");
+#ifdef PRINT_RSSI
+    if (print_rssi == true && timer5_timeout == false) {
+        // uint8_t temp1[10];
+        // memcpy(temp1, temp_info->node_id, ID_LEN);
+        // temp1[2] = ';';
+        // //temp1[3] = rssi;
+        //  memcpy(temp1 + 3, rssi, sizeof(int));
+        // sendData_tx(TX_TAG, (const char *)temp1);
+        printf("%x%x : %d\n", temp_info->node_id[0], temp_info->node_id[1], rssi);
+    }
+    else {
+    }
+#endif
+
 #if 0
     if (info->is_root == true) {                // 若root dead后重回网络
         if (temp_info->update > info->update) { // 自己重新上电
@@ -464,7 +501,7 @@ uint8_t *generate_anhsp(p_my_info info)
     anhsp[9] |= temp_next_id[1];
     anhsp[10] |= temp_root_id[0]; // 上一任root ID
     anhsp[11] |= temp_root_id[1];
-    memcpy(anhsp_final + 2, anhsp, ANHSP_DATA_LEN);
+    memcpy(anhsp_final + 3, anhsp, ANHSP_DATA_LEN);
     return anhsp_final;
 }
 
@@ -511,7 +548,7 @@ uint8_t *generate_transfer_anhsp(p_anhsp_info anhsp_info, p_my_info info)
     anhsp[9] |= temp_next_id[1];
     anhsp[10] |= temp_root_id[0]; // 上一任root ID
     anhsp[11] |= temp_root_id[1];
-    memcpy(anhsp_final + 2, anhsp, ANHSP_DATA_LEN);
+    memcpy(anhsp_final + 3, anhsp, ANHSP_DATA_LEN);
     return anhsp_final;
 }
 
@@ -536,10 +573,10 @@ void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
     /* -------------------------------------------------------------------------- */
     /*                                  开始转发到root                                 */
     /* -------------------------------------------------------------------------- */
-    if (info->is_root) {                                                                                                                                                   // 根节点 回复hsrrep
-        insert_down_routing_node(&my_down_routing_table, info->root_id, temp_info->source_id, temp_info->node_id, temp_info->distance + 1);                                // 把它加入到自己的路由表里
-        memcpy(adv_data_final_for_hsrrep, data_match(adv_data_name_7, generate_hsrrep(info, temp_info->source_id), HEAD_DATA_LEN, HSRREP_FINAL_DATA_LEN), FINAL_DATA_LEN); // 发送入网请求的节点成了根节点发送入网请求回复包的目的节点
-        queue_push(&send_queue, adv_data_final_for_hsrrep, 0);
+    if (info->is_root) {                                                                                                                                                                          // 根节点 回复hsrrep
+        insert_down_routing_node(&my_down_routing_table, info->root_id, temp_info->source_id, temp_info->node_id, temp_info->distance + 1);                                                       // 把它加入到自己的路由表里
+        memcpy(adv_data_final_for_hsrrep, data_match(adv_data_name_7, generate_hsrrep(info, temp_info->source_id), HEAD_DATA_LEN, HSRREP_FINAL_DATA_LEN), HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN); // 发送入网请求的节点成了根节点发送入网请求回复包的目的节点
+        queue_push(&send_queue, adv_data_final_for_hsrrep, 0, HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
         ESP_LOGE(DATA_TAG, "response hsrrep");
@@ -564,8 +601,8 @@ void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
         if (info->is_connected && memcmp(temp_info->next_id, info->my_id, ID_LEN) == 0) {                                                       // 由自己中转，开始转发
             insert_down_routing_node(&my_down_routing_table, info->root_id, temp_info->source_id, temp_info->node_id, temp_info->distance + 1); // 把它加入到自己的路由表里，自己成了它的父节点（父节点的选择由子节点根据链路质量确定）
             // TODO:未考虑路由表的维护
-            memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_transfer_anhsp(temp_info, info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anhsp, 0);
+            memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_transfer_anhsp(temp_info, info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
+            queue_push(&send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_ANHSP_DETAIL
             ESP_LOGE(DATA_TAG, "****************************ANHSP info:*****************************************");
@@ -626,7 +663,7 @@ uint8_t *generate_hsrrep(p_my_info info, uint8_t *des_id)
     hsrrep[7] |= temp_destination_id[1];
     hsrrep[8] |= temp_reverse_next_id[0]; // 下一跳id
     hsrrep[9] |= temp_reverse_next_id[1];
-    memcpy(hsrrep_final + 2, hsrrep, HSRREP_DATA_LEN);
+    memcpy(hsrrep_final + 3, hsrrep, HSRREP_DATA_LEN);
     return hsrrep_final;
 }
 
@@ -669,7 +706,7 @@ uint8_t *generate_transfer_hsrrep(p_hsrrep_info hsrrep_info, p_my_info info)
     hsrrep[8] |= temp_reverse_next_id[0]; // 下一跳id
     hsrrep[9] |= temp_reverse_next_id[1];
 
-    memcpy(hsrrep_final + 2, hsrrep, HSRREP_DATA_LEN);
+    memcpy(hsrrep_final + 3, hsrrep, HSRREP_DATA_LEN);
     return hsrrep_final;
 }
 
@@ -725,8 +762,8 @@ void resolve_hsrrep(uint8_t *hsrrep_data, p_my_info info)
         else {                                // 不是发给我的hsrrep（但是我是入网请求节点和根节点入网路径上的节点）
             if (info->is_connected == true) { // 由入网的节点转发
                 // insert_down_routing_node(&my_down_routing_table, info->root_id, temp_info->destination_id, temp_info->node_id, temp_info->distance + 1);
-                memcpy(adv_data_final_for_hsrrep, data_match(adv_data_name_7, generate_transfer_hsrrep(temp_info, info), HEAD_DATA_LEN, HSRREP_FINAL_DATA_LEN), FINAL_DATA_LEN);
-                queue_push(&send_queue, adv_data_final_for_hsrrep, 0);
+                memcpy(adv_data_final_for_hsrrep, data_match(adv_data_name_7, generate_transfer_hsrrep(temp_info, info), HEAD_DATA_LEN, HSRREP_FINAL_DATA_LEN), HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
+                queue_push(&send_queue, adv_data_final_for_hsrrep, 0, HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
                 xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
                 ESP_LOGE(DATA_TAG, "transfer hsrrep");
@@ -775,7 +812,7 @@ uint8_t *generate_anrreq(p_my_info info)
     anrreq[2] |= temp_source_id[0]; // 源 ID
     anrreq[3] |= temp_source_id[1];
 
-    memcpy(anrreq_final + 2, anrreq, ANRREQ_DATA_LEN);
+    memcpy(anrreq_final + 3, anrreq, ANRREQ_DATA_LEN);
     return anrreq_final;
 }
 
@@ -795,8 +832,8 @@ void resolve_anrreq(uint8_t *anrreq_data, p_my_info info)
     // TODO:序列号
     if (info->is_connected == true) {                                                        // 我是入网节点
         if (memcmp(info->quality_from_me, temp_info->quality_threshold, QUALITY_LEN) >= 0) { // 我满足阈值要求，我回复入网请求回复包
-            memcpy(adv_data_final_for_anrrep, data_match(adv_data_name_7, generate_anrrep(info, temp_info->source_id), HEAD_DATA_LEN, ANRREP_FINAL_DATA_LEN), FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anrrep, 0);
+            memcpy(adv_data_final_for_anrrep, data_match(adv_data_name_7, generate_anrrep(info, temp_info->source_id), HEAD_DATA_LEN, ANRREP_FINAL_DATA_LEN), HEAD_DATA_LEN + ANRREP_FINAL_DATA_LEN);
+            queue_push(&send_queue, adv_data_final_for_anrrep, 0, HEAD_DATA_LEN + ANRREP_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
             ESP_LOGE(DATA_TAG, "send anrrep");
@@ -835,7 +872,7 @@ uint8_t *generate_anrrep(p_my_info info, uint8_t *des_id)
     anrrep[6] |= temp_des_id[0]; // 发送入网请求包的节点
     anrrep[7] |= temp_des_id[1];
 
-    memcpy(anrrep_final + 2, anrrep, ANRREP_DATA_LEN);
+    memcpy(anrrep_final + 3, anrrep, ANRREP_DATA_LEN);
     return anrrep_final;
 }
 
@@ -878,8 +915,8 @@ void resolve_anrrep(uint8_t *anrrep_data, p_my_info info, int rssi)
 #ifdef PRINT_CONTROL_PACKAGES_STATES
             ESP_LOGE(DATA_TAG, "receive anrrep"); // 收到anrrep，开始向root发送入网请求
 #endif                                            // PRINT_CONTROL_PACKAGES_STATES
-            memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_anhsp(info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anhsp, 0);
+            memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_anhsp(info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
+            queue_push(&send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
             // 开始计时
             esp_timer_start_once(ble_time1_timer, TIME1_TIMER_PERIOD);
@@ -907,7 +944,7 @@ uint8_t *generate_rrer(p_my_info info)
     rrer[3] |= temp_node_id[1];
     rrer[4] |= temp_des_id[0];
     rrer[5] |= temp_des_id[1];
-    memcpy(rrer_final + 2, rrer, RRER_DATA_LEN);
+    memcpy(rrer_final + 3, rrer, RRER_DATA_LEN);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
     ESP_LOGE(DATA_TAG, "send rrer");
 #endif // PRINT_CONTROL_PACKAGES_STATES
@@ -945,8 +982,8 @@ void resolve_rrer(uint8_t *rrer_data, p_my_info info)
         info->quality_from_me[0] = NOR_NODE_INIT_QUALITY;
         memset(info->root_id, 0, ID_LEN);
         memset(info->next_id, 0, ID_LEN);
-        memcpy(adv_data_final_for_rrer, data_match(adv_data_name_7, generate_rrer(info), HEAD_DATA_LEN, RRER_FINAL_DATA_LEN), FINAL_DATA_LEN);
-        queue_push(&send_queue, adv_data_final_for_rrer, 0);
+        memcpy(adv_data_final_for_rrer, data_match(adv_data_name_7, generate_rrer(info), HEAD_DATA_LEN, RRER_FINAL_DATA_LEN), HEAD_DATA_LEN+RRER_FINAL_DATA_LEN);
+        queue_push(&send_queue, adv_data_final_for_rrer, 0, HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
         // 开始计时
         esp_timer_start_once(ble_time3_timer, TIME3_TIMER_PERIOD);
@@ -998,7 +1035,7 @@ uint8_t *generate_message(uint8_t *message_data, p_my_info info, uint8_t *des_id
     message[8] = temp_infrared[0];
     message[9] = temp_illumination[0];
     message[10] = temp_smoke[0];
-    memcpy(message_final + 2, message, 6);
+    memcpy(message_final + 3, message, 6);
     memcpy(message_final + 8, message_data, MESSAGE_DATA_LEN - 6);
     return message_final;
 }
@@ -1039,7 +1076,7 @@ uint8_t *generate_transfer_message(p_message_info message_info, p_my_info info)
     message[3] = temp_next_id[1];
     message[4] = temp_des_id[0];
     message[5] = temp_des_id[1];
-    memcpy(message_final + 2, message, 6);
+    memcpy(message_final + 3, message, 6);
     memcpy(message_final + 8, temp_useful_message, MESSAGE_DATA_LEN - 6);
     return message_final;
 }
@@ -1167,8 +1204,8 @@ void resolve_message(uint8_t *message_data, p_my_info info)
             ESP_LOGI(DATA_TAG, "Smoke:%d", temp_info->smoke[0]);
             ESP_LOGE(DATA_TAG, "*********************************************************************************");
 #endif
-            memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_transfer_message(temp_info, info), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_message, 0);
+            memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_transfer_message(temp_info, info), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
+            queue_push(&send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
         }
     }
@@ -1195,7 +1232,7 @@ uint8_t *generate_block_message(p_my_info info)
     block_message[3] |= temp_node_id[1];
     block_message[4] |= temp_des_id[0];
     block_message[5] |= temp_des_id[1];
-    memcpy(block_message_final + 2, block_message, BLOCK_MESSAGE_DATA_LEN);
+    memcpy(block_message_final + 3, block_message, BLOCK_MESSAGE_DATA_LEN);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
     ESP_LOGE(DATA_TAG, "send block_message");
 #endif // PRINT_CONTROL_PACKAGES_STATES

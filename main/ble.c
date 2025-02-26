@@ -1,13 +1,13 @@
 /*
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2023-09-22 17:13:32
- * @LastEditors: Zhenwei Song zhenwei.song@qq.com
- * @LastEditTime: 2024-02-29 10:05:51
- * @FilePath: \esp32\esp32_ble\gatt_server_service_table_modified\main\ble.c
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-02-26 20:49:09
+ * @FilePath: \esp32_ble_positioning\main\ble.c
  * @Description:
  * 实现了广播与扫描同时进行（基于gap层）
  * 添加了GPIO的测试内容（由宏定义控制是否启动）
- * 实现了基于adtype中name的判断接收包的方法
+ * 实现了基于adtype中name的判断接收包的方法NOTE:已删除
  * 实现了字符串的拼接（帧头 + 实际内容）
  * 添加了吞吐量测试
  * 添加了rssi
@@ -22,6 +22,8 @@
  * 添加了基于ID的包过滤机制，方便用于测试
  * 更新了链路质量的计算方法
  * 明细了项目测试时使用到的打印信息
+ * NOTE:删除基于adtype中name的判断接收包的方法，改为0xff增加通用性
+ * 使用动态广播包长度
  * Copyright (c) 2024 by Zhenwei Song, All Rights Reserved.
  */
 
@@ -91,9 +93,10 @@ queue send_queue;
 static void hello_task(void *pvParameters)
 {
     while (1) {
-        memcpy(adv_data_final_for_hello, data_match(adv_data_name_7, generate_phello(&my_information), HEAD_DATA_LEN, PHELLO_FINAL_DATA_LEN), FINAL_DATA_LEN);
-        queue_push(&send_queue, adv_data_final_for_hello, 0);
+        memcpy(adv_data_final_for_hello, data_match(adv_data_name_7, generate_phello(&my_information), HEAD_DATA_LEN, PHELLO_FINAL_DATA_LEN), HEAD_DATA_LEN + PHELLO_FINAL_DATA_LEN);
+        queue_push(&send_queue, adv_data_final_for_hello, 0, HEAD_DATA_LEN + PHELLO_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
+        // printf("sending hello\n");
         vTaskDelay(pdMS_TO_TICKS(HELLO_TIME));
     }
 }
@@ -117,8 +120,8 @@ static void message_task(void *pvParameters)
 #else
     while (1) {
         if (my_information.is_connected == true) {
-            memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_message(adv_data_message_16, &my_information, NULL), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_message, 0);
+            memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_message(adv_data_message_16, &my_information, NULL), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
+            queue_push(&send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
             vTaskDelay(pdMS_TO_TICKS(MESSAGE_TIME));
         }
@@ -133,6 +136,23 @@ static void message_task(void *pvParameters)
  */
 static void ble_down_routing_table_task(void *pvParameters)
 {
+    bool print_my_info = false;
+    ESP_LOGW(DATA_TAG, "*************my info:***************");
+    ESP_LOGI(DATA_TAG, "my_id:");
+    esp_log_buffer_hex(DATA_TAG, my_information.my_id, ID_LEN);
+    ESP_LOGI(DATA_TAG, "root_id:");
+    esp_log_buffer_hex(DATA_TAG, my_information.root_id, ID_LEN);
+    ESP_LOGI(DATA_TAG, "is_root:%d", my_information.is_root);
+    ESP_LOGI(DATA_TAG, "is_connected:%d", my_information.is_connected);
+    ESP_LOGI(DATA_TAG, "next_id:");
+    esp_log_buffer_hex(DATA_TAG, my_information.next_id, ID_LEN);
+    ESP_LOGI(DATA_TAG, "distance:%d", my_information.distance);
+    ESP_LOGI(DATA_TAG, "quality_from_me_to_cluster——via_best_neighbor:");
+    esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me, QUALITY_LEN);
+    ESP_LOGI(DATA_TAG, "quality_from_me_to_neighbor:");
+    esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me_to_neighbor, QUALITY_LEN);
+    ESP_LOGI(DATA_TAG, "update:%d", my_information.update);
+    ESP_LOGW(DATA_TAG, "************************************");
     while (1) {
         refresh_cnt_neighbor_table(&my_neighbor_table, &my_information);
 #ifndef SELF_ROOT
@@ -187,7 +207,7 @@ static void ble_down_routing_table_task(void *pvParameters)
 #ifdef PRINT_DOWN_ROUTING_TABLE
         print_down_routing_table(&my_down_routing_table);
 #endif // PRINT_DOWN_ROUTING_TABLE
-#if 1
+#if 0
         if (refresh_flag_for_neighbor == true) { // 状态改变，立即发送hello
             refresh_flag_for_neighbor = false;
             memcpy(adv_data_final_for_hello, data_match(adv_data_name_7, generate_phello(&my_information), HEAD_DATA_LEN, PHELLO_FINAL_DATA_LEN), FINAL_DATA_LEN);
@@ -196,22 +216,26 @@ static void ble_down_routing_table_task(void *pvParameters)
         }
 #endif
 #ifdef PRINT_MY_INFO
-        ESP_LOGW(DATA_TAG, "****************************Start printing my info:***********************************************");
-        ESP_LOGI(DATA_TAG, "my_id:");
-        esp_log_buffer_hex(DATA_TAG, my_information.my_id, ID_LEN);
-        ESP_LOGI(DATA_TAG, "root_id:");
-        esp_log_buffer_hex(DATA_TAG, my_information.root_id, ID_LEN);
-        ESP_LOGI(DATA_TAG, "is_root:%d", my_information.is_root);
-        ESP_LOGI(DATA_TAG, "is_connected:%d", my_information.is_connected);
-        ESP_LOGI(DATA_TAG, "next_id:");
-        esp_log_buffer_hex(DATA_TAG, my_information.next_id, ID_LEN);
-        ESP_LOGI(DATA_TAG, "distance:%d", my_information.distance);
-        ESP_LOGI(DATA_TAG, "quality_from_me_to_cluster——via_best_neighbor:");
-        esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me, QUALITY_LEN);
-        ESP_LOGI(DATA_TAG, "quality_from_me_to_neighbor:");
-        esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me_to_neighbor, QUALITY_LEN);
-        ESP_LOGI(DATA_TAG, "update:%d", my_information.update);
-        ESP_LOGW(DATA_TAG, "****************************Printing my info is finished *****************************************");
+        if (print_my_info == true) {
+            ESP_LOGW(DATA_TAG, "****************************Start printing my info:***********************************************");
+            ESP_LOGI(DATA_TAG, "my_id:");
+            esp_log_buffer_hex(DATA_TAG, my_information.my_id, ID_LEN);
+            ESP_LOGI(DATA_TAG, "root_id:");
+            esp_log_buffer_hex(DATA_TAG, my_information.root_id, ID_LEN);
+            ESP_LOGI(DATA_TAG, "is_root:%d", my_information.is_root);
+            ESP_LOGI(DATA_TAG, "is_connected:%d", my_information.is_connected);
+            ESP_LOGI(DATA_TAG, "next_id:");
+            esp_log_buffer_hex(DATA_TAG, my_information.next_id, ID_LEN);
+            ESP_LOGI(DATA_TAG, "distance:%d", my_information.distance);
+            ESP_LOGI(DATA_TAG, "quality_from_me_to_cluster——via_best_neighbor:");
+            esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me, QUALITY_LEN);
+            ESP_LOGI(DATA_TAG, "quality_from_me_to_neighbor:");
+            esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me_to_neighbor, QUALITY_LEN);
+            ESP_LOGI(DATA_TAG, "update:%d", my_information.update);
+            ESP_LOGW(DATA_TAG, "****************************Printing my info is finished *****************************************");
+            print_my_info = false;
+        }
+
 #endif // PRINT_MY_INFO
         vTaskDelay(pdMS_TO_TICKS(REFRESH_DOWN_ROUTING_TABLE_TIME));
     }
@@ -224,6 +248,7 @@ static void ble_down_routing_table_task(void *pvParameters)
  */
 static void ble_rec_data_task(void *pvParameters)
 {
+    uint8_t *get_data = NULL;
     uint8_t *phello = NULL;
     uint8_t *anhsp = NULL;
     uint8_t *hsrrep = NULL;
@@ -233,6 +258,8 @@ static void ble_rec_data_task(void *pvParameters)
     uint8_t *message = NULL;
     uint8_t *block = NULL;
     uint8_t *rec_data = NULL;
+    uint8_t rec_data_len = 0;
+    uint8_t get_len = 0;
     uint8_t phello_len = 0;
     uint8_t anhsp_len = 0;
     uint8_t hsrrep_len = 0;
@@ -245,18 +272,45 @@ static void ble_rec_data_task(void *pvParameters)
         if (xSemaphoreTake(xCountingSemaphore_receive, portMAX_DELAY) == pdTRUE) // 得到了信号量
         {
             if (!queue_is_empty(&rec_queue)) {
-                rec_data = queue_pop(&rec_queue);
+                rec_data = queue_pop(&rec_queue, &rec_data_len);
                 if (rec_data != NULL) {
-                    phello = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_PHELLO, &phello_len);
-                    anhsp = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_ANHSP, &anhsp_len);
-                    hsrrep = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_HSRREP, &hsrrep_len);
-                    anrreq = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_ANRREQ, &anrreq_len);
-                    anrrep = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_ANRREP, &anrrep_len);
-                    rrer = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_RRER, &rrer_len);
-                    message = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_MESSAGE, &message_len);
-                    block = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_TYPE_BLOCK, &block_len);
-                    // ESP_LOGI(TAG, "ADV_DATA:");
-                    // esp_log_buffer_hex(TAG, rec_data, 31);
+                    get_data = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, &get_len);
+                    switch (get_data[0]) {
+                    case TYPE_PHELLO:
+                        phello = get_data;
+                        phello_len = get_len;
+                        break;
+                    case TYPE_ANHSP:
+                        anhsp = get_data;
+                        anhsp_len = get_len;
+                        break;
+                    case TYPE_HSRREP:
+                        hsrrep = get_data;
+                        hsrrep_len = get_len;
+                        break;
+                    case TYPE_ANRREQ:
+                        anrreq = get_data;
+                        anrreq_len = get_len;
+                        break;
+                    case TYPE_ANRREP:
+                        anrrep = get_data;
+                        anrrep_len = get_len;
+                        break;
+                    case TYPE_RRER:
+                        rrer = get_data;
+                        rrer_len = get_len;
+                        break;
+                    case TYPE_MESSAGE:
+                        message = get_data;
+                        message_len = get_len;
+                        break;
+                    case TYPE_BLOCK:
+                        block = get_data;
+                        block_len = get_len;
+                        break;
+                    default:
+                        break;
+                    }
                     if (phello != NULL) {
                         resolve_phello(phello, &my_information, temp_rssi);
 #ifdef PRINT_CONTROL_PACKAGES_RECEIVED
@@ -330,6 +384,7 @@ static void ble_rec_data_task(void *pvParameters)
 static void ble_send_data_task(void *pvParameters)
 {
     uint8_t *send_data = NULL;
+    uint8_t data_len;
     while (1) {
 #if 0
         if (!queue_is_empty(&send_queue)) {
@@ -345,14 +400,15 @@ static void ble_send_data_task(void *pvParameters)
         if (xSemaphoreTake(xCountingSemaphore_send, portMAX_DELAY) == pdTRUE) // 得到了信号量
         {
             if (!queue_is_empty(&send_queue)) {
-                send_data = queue_pop(&send_queue);
+                send_data = queue_pop(&send_queue, &data_len);
                 if (send_data != NULL) {
-                    esp_ble_gap_config_adv_data_raw(send_data, 31);
+                    esp_ble_gap_config_adv_data_raw(send_data, data_len);
                     esp_ble_gap_start_advertising(&adv_params);
                     free(send_data);
                 }
             }
         }
+        // printf("sending message\n");
         vTaskDelay(pdMS_TO_TICKS(ADV_TIME));
 #endif
     }
@@ -368,8 +424,8 @@ static void ble_timer1_check_task(void *pvParameters)
     while (1) {
         if (xSemaphoreTake(xCountingSemaphore_timeout1, portMAX_DELAY) == pdTRUE) // 得到了信号量
         {
-            memcpy(adv_data_final_for_anrreq, data_match(adv_data_name_7, generate_anrreq(&my_information), HEAD_DATA_LEN, ANRREQ_FINAL_DATA_LEN), FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anrreq, 0);
+            memcpy(adv_data_final_for_anrreq, data_match(adv_data_name_7, generate_anrreq(&my_information), HEAD_DATA_LEN, ANRREQ_FINAL_DATA_LEN), HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN);
+            queue_push(&send_queue, adv_data_final_for_anrreq, 0, HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
             // 开始计时
             esp_timer_start_once(ble_time2_timer, TIME2_TIMER_PERIOD);
@@ -576,11 +632,12 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                         is_filtered = false;
                     }
                     else {
-                        queue_push_with_check(&rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi);
+                        queue_push_with_check(&rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi, 31);
                         xSemaphoreGive(xCountingSemaphore_receive);
                     }
 #else
-                    queue_push_with_check(&rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi);
+                    // printf("get raw message\n");
+                    queue_push_with_check(&rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi, 31);
                     xSemaphoreGive(xCountingSemaphore_receive);
 #endif // FILTER
        //  queue_print(&rec_queue);
@@ -634,20 +691,38 @@ void button_ops()
 {
 #ifdef BUTTON_MY_MESSAGE
     ESP_LOGE(DATA_TAG, "SENDING MY MESSAGE");
-    memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_message(adv_data_message_16, &my_information, NULL), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), FINAL_DATA_LEN);
-    queue_push(&send_queue, adv_data_final_for_message, 0);
+    memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_message(adv_data_message_16, &my_information, NULL), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
+    queue_push(&send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
     xSemaphoreGive(xCountingSemaphore_send);
 #endif
 #ifdef BUTTON_BLOCK_MESSAGE
     // ESP_LOGE(DATA_TAG, "SENDING BLOCK MESSAGE");
-    memcpy(adv_data_final_for_block_message, data_match(adv_data_name_7, generate_block_message(&my_information), HEAD_DATA_LEN, BLOCK_MESSAGE_FINAL_DATA_LEN), FINAL_DATA_LEN);
-    queue_push(&send_queue, adv_data_final_for_block_message, 0);
+    memcpy(adv_data_final_for_block_message, data_match(adv_data_name_7, generate_block_message(&my_information), HEAD_DATA_LEN, BLOCK_MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + BLOCK_MESSAGE_FINAL_DATA_LEN);
+    queue_push(&send_queue, adv_data_final_for_block_message, 0, HEAD_DATA_LEN + BLOCK_MESSAGE_FINAL_DATA_LEN);
     xSemaphoreGive(xCountingSemaphore_send);
+#endif
+#ifdef PRINT_RSSI
+    if (timer5_timeout == true) {
+        timer5_timeout = false;
+        esp_timer_start_once(ble_time5_timer, TIME5_TIMER_PERIOD);
+        print_rssi = true;
+    }
+    else {
+        printf("Already started printing rssi!\n");
+    }
 #endif
 }
 #else
 void button_ops()
 {
+    if (timer5_timeout == true) {
+        timer5_timeout = false;
+        esp_timer_start_once(ble_time5_timer, TIME5_TIMER_PERIOD);
+        print_rssi = true;
+    }
+    else {
+        printf("Already started printing rssi!\n");
+    }
 }
 #endif
 #endif // BUTTON
@@ -763,7 +838,7 @@ void app_main(void)
     // esp_timer_start_periodic(ble_time4_timer, TIME3_TIMER_PERIOD);
 #endif
 #endif
-#ifdef PRINT_MESSAGE_FOR_OPENWRT
+#if defined PRINT_MESSAGE_FOR_OPENWRT || defined PRINT_RSSI
     ble_uart_init();
 #endif
 #ifdef BUTTON

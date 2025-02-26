@@ -1,9 +1,9 @@
 /*
  * @Author: Zhenwei-Song zhenwei.song@qq.com
  * @Date: 2023-11-11 11:06:54
- * @LastEditors: Zhenwei Song zhenwei.song@qq.com
- * @LastEditTime: 2024-01-26 16:16:41
- * @FilePath: \esp32\esp32_ble\gatt_server_service_table_modified\main\data_manage.h
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-02-26 15:17:04
+ * @FilePath: \esp32_ble_positioning\main\data_manage.h
  * @Description: 仅供学习交流使用
  * Copyright (c) 2023 by Zhenwei-Song, All Rights Reserved.
  */
@@ -60,33 +60,47 @@
 #define THRESHOLD_LOW_1 0x04
 #define THRESHOLD_LOW_2 0xff
 
-#define PHELLO_FINAL_DATA_LEN 18
+#define BLUDE_PACKET_LENGTH 376
+
+#define PHELLO_FINAL_DATA_LEN 19
 #define PHELLO_DATA_LEN PHELLO_FINAL_DATA_LEN - 2
 
-#define ANHSP_FINAL_DATA_LEN 14
+#define ANHSP_FINAL_DATA_LEN 15
 #define ANHSP_DATA_LEN ANHSP_FINAL_DATA_LEN - 2
 
-#define HSRREP_FINAL_DATA_LEN 14
+#define HSRREP_FINAL_DATA_LEN 15
 #define HSRREP_DATA_LEN HSRREP_FINAL_DATA_LEN - 2
 
-#define ANRREQ_FINAL_DATA_LEN 10
+#define ANRREQ_FINAL_DATA_LEN 11
 #define ANRREQ_DATA_LEN ANRREQ_FINAL_DATA_LEN - 2
 
-#define ANRREP_FINAL_DATA_LEN 14
+#define ANRREP_FINAL_DATA_LEN 15
 #define ANRREP_DATA_LEN ANRREP_FINAL_DATA_LEN - 2
 
-#define RRER_FINAL_DATA_LEN 10
+#define RRER_FINAL_DATA_LEN 11
 #define RRER_DATA_LEN RRER_FINAL_DATA_LEN - 2
 
-#define MESSAGE_FINAL_DATA_LEN 24
+#define MESSAGE_FINAL_DATA_LEN 25
 #define MESSAGE_DATA_LEN MESSAGE_FINAL_DATA_LEN - 2
 
-#define BLOCK_MESSAGE_FINAL_DATA_LEN 10
+#define BLOCK_MESSAGE_FINAL_DATA_LEN 11
 #define BLOCK_MESSAGE_DATA_LEN BLOCK_MESSAGE_FINAL_DATA_LEN - 2
 
-#define BLUDE_PACKET_LENGTH 376
+#define TYPE_PHELLO 0xf1
+#define TYPE_ANHSP 0xf2
+#define TYPE_HSRREP 0xf3
+#define TYPE_ANRREQ 0xf4
+#define TYPE_ANRREP 0xf5
+#define TYPE_RRER 0xf6
+#define TYPE_MESSAGE 0xf7
+#define TYPE_BLOCK 0xf8
+
 extern SemaphoreHandle_t xCountingSemaphore_send;
 extern SemaphoreHandle_t xCountingSemaphore_receive;
+
+#ifdef PRINT_RSSI
+extern bool print_rssi;
+#endif
 
 extern uint8_t id_774a[ID_LEN];
 extern uint8_t id_cae6[ID_LEN];
@@ -168,7 +182,7 @@ typedef struct message_info {
     uint8_t source_id[ID_LEN];
     uint8_t next_id[ID_LEN];
     uint8_t destination_id[ID_LEN];
-    uint8_t useful_message[USEFUL_MESSAGE_LEN];//保留数据
+    uint8_t useful_message[USEFUL_MESSAGE_LEN]; // 保留数据
     uint8_t temperature[SENSOR_LEN];
     uint8_t humidity[SENSOR_LEN];
     uint8_t infrared[SENSOR_LEN];
@@ -195,17 +209,14 @@ extern uint8_t adv_data_name_7[HEAD_DATA_LEN];
 
 extern uint8_t temp_data_31[FINAL_DATA_LEN];
 
-extern uint8_t adv_data_final_for_hello[FINAL_DATA_LEN];
-
-extern uint8_t adv_data_final_for_anhsp[FINAL_DATA_LEN];
-
-extern uint8_t adv_data_final_for_anrreq[FINAL_DATA_LEN];
-
-extern uint8_t adv_data_final_for_rrer[FINAL_DATA_LEN];
-
-extern uint8_t adv_data_final_for_message[FINAL_DATA_LEN];
-
-extern uint8_t adv_data_final_for_block_message[FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_hello[HEAD_DATA_LEN + PHELLO_FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_anhsp[HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_hsrrep[HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_anrreq[HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_anrrep[HEAD_DATA_LEN + ANRREP_FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_rrer[HEAD_DATA_LEN + RRER_FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_message[HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN];
+extern uint8_t adv_data_final_for_block_message[HEAD_DATA_LEN + BLOCK_MESSAGE_FINAL_DATA_LEN];
 
 extern uint8_t adv_data_message_16[MESSAGE_DATA_LEN - 6];
 // 31字节数据

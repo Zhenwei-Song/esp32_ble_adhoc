@@ -1,9 +1,9 @@
 /*
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2023-12-05 17:18:06
- * @LastEditors: Zhenwei Song zhenwei.song@qq.com
- * @LastEditTime: 2024-01-20 09:48:09
- * @FilePath: \esp32\esp32_ble\gatt_server_service_table_modified\main\ble.h
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2024-12-18 16:16:46
+ * @FilePath: \esp32_ble_positioning\gatt_server_service_table_modified\main\ble.h
  * @Description: 仅供学习交流使用
  * Copyright (c) 2023 by Zhenwei Song, All Rights Reserved.
  */
@@ -72,6 +72,7 @@ esp_ble_adv_params_t adv_params = {
     .adv_type = ADV_TYPE_NONCONN_IND, // 不可连接
     .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
     .channel_map = ADV_CHNL_ALL, // 在所有三个信道上广播
+    //.channel_map = ADV_CHNL_37,
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST,
 };
 
@@ -80,7 +81,7 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_type = BLE_SCAN_TYPE_PASSIVE,
     .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
     .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
-#if 1
+#if 0
     .scan_interval = 0xff, // 50 * 0.625ms = 31.25ms
     .scan_window = 0xff,
 #else

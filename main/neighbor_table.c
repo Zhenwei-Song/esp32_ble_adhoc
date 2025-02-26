@@ -355,10 +355,10 @@ void refresh_cnt_neighbor_table(p_neighbor_table table, p_my_info info)
 #ifdef PRINT_NEIGHBOR_TABLE_STATES
                     ESP_LOGE(NEIGHBOR_TAG, "father deleted"); // 自己的父节点无了，发送rrer
 #endif
-                    memcpy(adv_data_final_for_rrer, data_match(adv_data_name_7, generate_rrer(info), HEAD_DATA_LEN, RRER_FINAL_DATA_LEN), FINAL_DATA_LEN);
-                    queue_push(&send_queue, adv_data_final_for_rrer, 0);
+                    memcpy(adv_data_final_for_rrer, data_match(adv_data_name_7, generate_rrer(info), HEAD_DATA_LEN, RRER_FINAL_DATA_LEN), HEAD_DATA_LEN+RRER_FINAL_DATA_LEN);
+                    queue_push(&send_queue, adv_data_final_for_rrer, 0, HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
                     vTaskDelay(pdMS_TO_TICKS(RERR_REPEAT_TIME));
-                    queue_push(&send_queue, adv_data_final_for_rrer, 0);
+                    queue_push(&send_queue, adv_data_final_for_rrer, 0, HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
                     xSemaphoreGive(xCountingSemaphore_send);
                     // 开始计时
                     esp_timer_start_once(ble_time3_timer, TIME3_TIMER_PERIOD);
@@ -529,8 +529,8 @@ void threshold_between_ops(p_neighbor_table table, p_my_info info)
         /* -------------------------------------------------------------------------- */
         /*                               向next_id发送入网请求包                              */
         /* -------------------------------------------------------------------------- */
-        memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_anhsp(info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), FINAL_DATA_LEN);
-        queue_push(&send_queue, adv_data_final_for_anhsp, 0);
+        memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_anhsp(info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
+        queue_push(&send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
 #ifdef BLE_TIMER
         // 开始计时
@@ -573,8 +573,8 @@ void threshold_low_ops(p_neighbor_table table, p_my_info info)
         /* -------------------------------------------------------------------------- */
         /*                               向next_id发送入网请求包                              */
         /* -------------------------------------------------------------------------- */
-        memcpy(adv_data_final_for_anrreq, data_match(adv_data_name_7, generate_anrreq(info), HEAD_DATA_LEN, ANRREQ_FINAL_DATA_LEN), FINAL_DATA_LEN);
-        queue_push(&send_queue, adv_data_final_for_anrreq, 0);
+        memcpy(adv_data_final_for_anrreq, data_match(adv_data_name_7, generate_anrreq(info), HEAD_DATA_LEN, ANRREQ_FINAL_DATA_LEN), HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN);
+        queue_push(&send_queue, adv_data_final_for_anrreq, 0, HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
 #ifdef BLE_TIMER
         // 开始计时

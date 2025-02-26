@@ -1,9 +1,9 @@
 /*
  * @Author: Zhenwei-Song zhenwei.song@qq.com
  * @Date: 2023-11-08 16:35:47
- * @LastEditors: Zhenwei-Song zhenwei.song@qq.com
- * @LastEditTime: 2023-11-17 20:52:31
- * @FilePath: \esp32\gatt_server_service_table_modified\main\ble_queue.h
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-02-26 19:33:33
+ * @FilePath: \esp32_ble_positioning\main\ble_queue.h
  * @Description: 仅供学习交流使用
  * Copyright (c) 2023 by Zhenwei-Song, All Rights Reserved.
  */
@@ -24,8 +24,15 @@
 #define QUEUE_TAG "QUEUE"
 #define queue_data_length 31
 
+// typedef struct qnode {
+//     uint8_t data[queue_data_length];
+//     int rssi;
+//     struct qnode *next;
+// } qnode, *p_qnode;
+
 typedef struct qnode {
-    uint8_t data[queue_data_length];
+    uint8_t *data;
+    uint8_t len;
     int rssi;
     struct qnode *next;
 } qnode, *p_qnode;
@@ -42,11 +49,11 @@ extern int temp_rssi;
 
 void queue_init(p_queue q);
 
-void queue_push(p_queue q, uint8_t *data, int rssi);
+void queue_push(p_queue q, uint8_t *data, int rssi, uint8_t len);
 
-void queue_push_with_check(p_queue q, uint8_t *data, int rssi);
+void queue_push_with_check(p_queue q, uint8_t *data, int rssi, uint8_t len);
 
-uint8_t *queue_pop(p_queue q);
+uint8_t *queue_pop(p_queue q, uint8_t *len);
 
 int get_queue_node_rssi(p_queue q);
 

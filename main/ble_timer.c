@@ -2,8 +2,8 @@
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2024-01-16 15:05:32
  * @LastEditors: Zhenwei Song zhenwei.song@qq.com
- * @LastEditTime: 2024-01-22 20:02:32
- * @FilePath: \esp32\esp32_ble\gatt_server_service_table_modified\main\ble_timer.c
+ * @LastEditTime: 2024-04-17 09:57:41
+ * @FilePath: \esp32_ble_positioning\gatt_server_service_table_modified\main\ble_timer.c
  * @Description: 仅供学习交流使用
  * Copyright (c) 2024 by Zhenwei Song, All Rights Reserved.
  */
@@ -18,6 +18,7 @@ esp_timer_handle_t ble_time5_timer;
 
 bool timer1_timeout = false;
 bool timer2_timeout = false;
+bool timer5_timeout = true;
 
 bool timer1_running = false;
 bool timer2_running = false;
@@ -64,7 +65,7 @@ void ble_timer_init(void)
  * @description: timer1超时函数，用于time1
  * @return {*}
  */
-void time1_timer_cb(void)
+void time1_timer_cb(void *)
 {
     timer1_timeout = true;
     timer1_running = false;
@@ -78,7 +79,7 @@ void time1_timer_cb(void)
  * @description: timer2超时函数，用于time2
  * @return {*}
  */
-void time2_timer_cb(void)
+void time2_timer_cb(void*)
 {
     timer2_timeout = true;
     timer2_running = false;
@@ -92,7 +93,7 @@ void time2_timer_cb(void)
  * @description: timer3超时函数，用于time3
  * @return {*}
  */
-void time3_timer_cb(void)
+void time3_timer_cb(void*)
 {
     timer3_running = false;
 #ifdef PRINT_TIMER_STATES
@@ -104,7 +105,7 @@ void time3_timer_cb(void)
  * @description: timer4超时函数，用于入网后定时进行路由发现
  * @return {*}
  */
-void time4_timer_cb(void)
+void time4_timer_cb(void*)
 {
     entry_network_flag = true;
 #ifdef PRINT_TIMER_STATES
@@ -113,12 +114,14 @@ void time4_timer_cb(void)
 }
 
 /**
- * @description: timer5超时函数，用于定时发送传感数据
+ * @description: timer5超时函数
  * @return {*}
  */
-void time5_timer_cb(void)
+void time5_timer_cb(void*)
 {
+    timer5_timeout = true;
+    printf("Finish recording!\n\n\n");
 #ifdef PRINT_TIMER_STATES
-    printf("time4_timeout\n");
+    printf("time5_timeout\n");
 #endif
 }
