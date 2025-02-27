@@ -1,9 +1,9 @@
 /*
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2024-01-16 15:05:32
- * @LastEditors: Zhenwei Song zhenwei.song@qq.com
- * @LastEditTime: 2024-04-17 09:57:41
- * @FilePath: \esp32_ble_positioning\gatt_server_service_table_modified\main\ble_timer.c
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-02-27 15:10:03
+ * @FilePath: \esp32_ble_positioning\main\ble_timer.c
  * @Description: 仅供学习交流使用
  * Copyright (c) 2024 by Zhenwei Song, All Rights Reserved.
  */
@@ -62,7 +62,7 @@ void ble_timer_init(void)
 }
 
 /**
- * @description: timer1超时函数，用于time1
+ * @description: timer1超时函数，用于入网
  * @return {*}
  */
 void time1_timer_cb(void *)
@@ -76,10 +76,10 @@ void time1_timer_cb(void *)
 }
 
 /**
- * @description: timer2超时函数，用于time2
+ * @description: timer2超时函数，用于入网
  * @return {*}
  */
-void time2_timer_cb(void*)
+void time2_timer_cb(void *)
 {
     timer2_timeout = true;
     timer2_running = false;
@@ -90,10 +90,10 @@ void time2_timer_cb(void*)
 }
 
 /**
- * @description: timer3超时函数，用于time3
+ * @description: timer3超时函数，用于rrer
  * @return {*}
  */
-void time3_timer_cb(void*)
+void time3_timer_cb(void *)
 {
     timer3_running = false;
 #ifdef PRINT_TIMER_STATES
@@ -102,10 +102,10 @@ void time3_timer_cb(void*)
 }
 
 /**
- * @description: timer4超时函数，用于入网后定时进行路由发现
+ * @description: timer4超时函数，未使用
  * @return {*}
  */
-void time4_timer_cb(void*)
+void time4_timer_cb(void *)
 {
     entry_network_flag = true;
 #ifdef PRINT_TIMER_STATES
@@ -114,10 +114,10 @@ void time4_timer_cb(void*)
 }
 
 /**
- * @description: timer5超时函数
+ * @description: timer5超时函数,用于按键打印rssi
  * @return {*}
  */
-void time5_timer_cb(void*)
+void time5_timer_cb(void *)
 {
     timer5_timeout = true;
     printf("Finish recording!\n\n\n");

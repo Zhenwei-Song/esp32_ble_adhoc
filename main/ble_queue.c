@@ -2,7 +2,7 @@
  * @Author: Zhenwei-Song zhenwei.song@qq.com
  * @Date: 2023-11-08 16:36:10
  * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
- * @LastEditTime: 2025-02-26 20:05:01
+ * @LastEditTime: 2025-02-27 09:45:57
  * @FilePath: \esp32_ble_positioning\main\ble_queue.c
  * @Description: 仅供学习交流使用
  * Copyright (c) 2023 by Zhenwei-Song, All Rights Reserved.
@@ -39,7 +39,7 @@ void queue_push(p_queue q, uint8_t *data, int rssi, uint8_t len)
         new_node->data = (uint8_t *)malloc(sizeof(uint8_t) * len);
         if (new_node->data == NULL) {
             ESP_LOGE(QUEUE_TAG, "malloc failed for node data");
-            free(new_node); // 释放已分配的节点内存
+            return;
         }
         memcpy(new_node->data, data, len);
         new_node->len = len;
@@ -71,6 +71,7 @@ void queue_push_with_check(p_queue q, uint8_t *data, int rssi, uint8_t len)
         p_qnode new_node_head = (p_qnode)malloc(sizeof(qnode));
         if (new_node_head == NULL) {
             ESP_LOGE(QUEUE_TAG, "malloc failed");
+            return;
         }
         new_node_head->data = (uint8_t *)malloc(sizeof(uint8_t) * len);
         memcpy(new_node_head->data, data, len);
@@ -88,6 +89,7 @@ void queue_push_with_check(p_queue q, uint8_t *data, int rssi, uint8_t len)
             p_qnode new_node = (p_qnode)malloc(sizeof(qnode));
             if (new_node == NULL) {
                 ESP_LOGE(QUEUE_TAG, "malloc failed");
+                return;
             }
             else {
                 new_node->data = (uint8_t *)malloc(sizeof(uint8_t) * len);
@@ -176,12 +178,12 @@ bool queue_is_empty(p_queue q)
 void queue_print(p_queue q)
 {
     p_qnode node = q->head;
-    ESP_LOGW(QUEUE_TAG, "********************************Start printing queue:********************************************************");
+    ESP_LOGW(QUEUE_TAG, "****************queue:***************");
     while (node != NULL) {
         esp_log_buffer_hex(QUEUE_TAG, node->data, node->len);
         node = node->next;
     }
-    ESP_LOGW(QUEUE_TAG, "********************************Printing queue is finished***************************************************");
+    ESP_LOGW(QUEUE_TAG, "*************************************");
 }
 
 /**

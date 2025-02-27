@@ -2,7 +2,7 @@
  * @Author: Zhenwei-Song zhenwei.song@qq.com
  * @Date: 2023-11-13 16:00:10
  * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
- * @LastEditTime: 2025-02-26 15:58:30
+ * @LastEditTime: 2025-02-27 10:35:03
  * @FilePath: \esp32_ble_positioning\main\data_manage.c
  * @Description: 仅供学习交流使用
  * Copyright (c) 2023 by Zhenwei-Song, All Rights Reserved.
@@ -340,22 +340,20 @@ uint8_t *generate_phello(p_my_info info)
 void resolve_phello(uint8_t *phello_data, p_my_info info, int rssi)
 {
     p_phello_info temp_info = (p_phello_info)malloc(sizeof(phello_info));
-    uint8_t temp[PHELLO_DATA_LEN];
-    memcpy(temp, phello_data, PHELLO_DATA_LEN);
-    temp_info->moveable = ((temp[0] & 0x01) == 0x01 ? true : false);
-    temp_info->is_root = ((temp[1] & 0x10) == 0x10 ? true : false);
-    temp_info->is_connected = ((temp[1] & 0x01) == 0x01 ? true : false);
-    temp_info->x = temp[2];
-    temp_info->y = temp[3];
-    temp_info->distance = temp[4];
+    temp_info->moveable = ((phello_data[0] & 0x01) == 0x01 ? true : false);
+    temp_info->is_root = ((phello_data[1] & 0x10) == 0x10 ? true : false);
+    temp_info->is_connected = ((phello_data[1] & 0x01) == 0x01 ? true : false);
+    temp_info->x = phello_data[2];
+    temp_info->y = phello_data[3];
+    temp_info->distance = phello_data[4];
     // temp_info->quality_from_me = temp[7];4
-    memcpy(temp_info->quality, temp + 6, QUALITY_LEN);
-    memcpy(temp_info->node_id, temp + 8, ID_LEN);
+    memcpy(temp_info->quality, phello_data + 6, QUALITY_LEN);
+    memcpy(temp_info->node_id, phello_data + 8, ID_LEN);
     // memcpy(info->root_id, temp + 10, ID_LEN);
-    memcpy(temp_info->next_id, temp + 12, ID_LEN);
-    temp_info->update = temp[15];
+    memcpy(temp_info->next_id, phello_data + 12, ID_LEN);
+    temp_info->update = phello_data[15];
     if (info->is_root == false && temp_info->is_connected == true) {
-        memcpy(info->root_id, temp + 10, ID_LEN);
+        memcpy(info->root_id, phello_data + 10, ID_LEN);
         if (memcmp(temp_info->next_id, info->my_id, ID_LEN) != 0) { // 邻居中不以我为父节点的节点均是我的多路径选择对象
             insert_up_routing_node(&my_up_routing_table, info->root_id, temp_info->node_id, temp_info->distance);
         }
@@ -379,32 +377,32 @@ void resolve_phello(uint8_t *phello_data, p_my_info info, int rssi)
                          temp_info->is_connected, temp_info->quality, temp_info->distance, rssi, temp_info->next_id);
     update_quality_of_neighbor_table(&my_neighbor_table, &my_information);
 #ifdef PRINT_HELLO_DETAIL
-    ESP_LOGI(DATA_TAG, "****************************Hello info:*****************************************");
-    ESP_LOGI(DATA_TAG, "the type of the packet:HELLO");
+    ESP_LOGI(DATA_TAG, "**************Hello****************");
+    ESP_LOGI(DATA_TAG, "type:HELLO");
     if (temp_info->moveable)
         ESP_LOGI(DATA_TAG, "locomotivity:Yes");
     else
         ESP_LOGI(DATA_TAG, "locomotivity:No");
     if (temp_info->is_root)
-        ESP_LOGI(DATA_TAG, "the identity of the node:Network Exchange Point");
+        ESP_LOGI(DATA_TAG, "identity:Network Exchange Point");
     else
-        ESP_LOGI(DATA_TAG, "the identity of the node:Normal Point");
+        ESP_LOGI(DATA_TAG, "identity:Normal Point");
     if (temp_info->is_connected)
-        ESP_LOGI(DATA_TAG, "the network connection:Success");
+        ESP_LOGI(DATA_TAG, "network connection:Success");
     else
-        ESP_LOGI(DATA_TAG, "the network connection:Fail");
-    ESP_LOGI(DATA_TAG, "the x-coordinate of the location:%d", temp_info->x);
-    ESP_LOGI(DATA_TAG, "the y-coordinate of the location:%d", temp_info->y);
-    ESP_LOGI(DATA_TAG, "the number of hops to the Network Exchange Point:%d", temp_info->distance);
-    ESP_LOGI(DATA_TAG, "link quality:");
+        ESP_LOGI(DATA_TAG, "network connection:Fail");
+    ESP_LOGI(DATA_TAG, "x:%d", temp_info->x);
+    ESP_LOGI(DATA_TAG, "y:%d", temp_info->y);
+    ESP_LOGI(DATA_TAG, "hops to Network Exchange Point:%d", temp_info->distance);
+    ESP_LOGI(DATA_TAG, "quality:");
     esp_log_buffer_hex(DATA_TAG, temp_info->quality, QUALITY_LEN);
     ESP_LOGI(DATA_TAG, "Node ID:");
     esp_log_buffer_hex(DATA_TAG, temp_info->node_id, ID_LEN);
-    ESP_LOGI(DATA_TAG, "ID of the Network Exchange Point:");
+    ESP_LOGI(DATA_TAG, "Network Exchange Point ID:");
     esp_log_buffer_hex(DATA_TAG, info->root_id, ID_LEN);
-    ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+    ESP_LOGI(DATA_TAG, "next hop ID:");
     esp_log_buffer_hex(DATA_TAG, temp_info->next_id, ID_LEN);
-    ESP_LOGI(DATA_TAG, "*********************************************************************************");
+    ESP_LOGI(DATA_TAG, "************************************");
 #endif
     // printf("resolve hello\n");
 #ifdef PRINT_RSSI
@@ -471,6 +469,7 @@ void resolve_phello(uint8_t *phello_data, p_my_info info, int rssi)
         }
     }
 #endif
+    free(temp_info);
 }
 
 /**
@@ -561,14 +560,12 @@ uint8_t *generate_transfer_anhsp(p_anhsp_info anhsp_info, p_my_info info)
 void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
 {
     p_anhsp_info temp_info = (p_anhsp_info)malloc(sizeof(anhsp_info));
-    uint8_t temp[ANHSP_DATA_LEN];
-    memcpy(temp, anhsp_data, ANHSP_DATA_LEN);
-    temp_info->distance = temp[1];
-    memcpy(temp_info->quality, temp + 2, QUALITY_LEN);
-    memcpy(temp_info->node_id, temp + 4, ID_LEN);
-    memcpy(temp_info->source_id, temp + 6, ID_LEN);
-    memcpy(temp_info->next_id, temp + 8, ID_LEN);
-    memcpy(temp_info->last_root_id, temp + 10, ID_LEN);
+    temp_info->distance = anhsp_data[1];
+    memcpy(temp_info->quality, anhsp_data + 2, QUALITY_LEN);
+    memcpy(temp_info->node_id, anhsp_data + 4, ID_LEN);
+    memcpy(temp_info->source_id, anhsp_data + 6, ID_LEN);
+    memcpy(temp_info->next_id, anhsp_data + 8, ID_LEN);
+    memcpy(temp_info->last_root_id, anhsp_data + 10, ID_LEN);
 
     /* -------------------------------------------------------------------------- */
     /*                                  开始转发到root                                 */
@@ -582,19 +579,19 @@ void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
         ESP_LOGE(DATA_TAG, "response hsrrep");
 #endif // PRINT_CONTROL_PACKAGES_STATES
 #ifdef PRINT_ANHSP_DETAIL
-        ESP_LOGE(DATA_TAG, "****************************ANHSP info:*****************************************");
-        ESP_LOGI(DATA_TAG, "the type of the packet:ANHSP");
-        ESP_LOGI(DATA_TAG, "ID of the source node:");
+        ESP_LOGE(DATA_TAG, "****************ANHSP****************");
+        ESP_LOGI(DATA_TAG, "type:ANHSP");
+        ESP_LOGI(DATA_TAG, "source ID:");
         esp_log_buffer_hex(DATA_TAG, temp_info->source_id, ID_LEN);
-        ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+        ESP_LOGI(DATA_TAG, "next hop ID:");
         esp_log_buffer_hex(DATA_TAG, temp_info->next_id, ID_LEN);
-        ESP_LOGI(DATA_TAG, "ID of the destination node:");
+        ESP_LOGI(DATA_TAG, "destination ID:");
         esp_log_buffer_hex(DATA_TAG, temp_info->last_root_id, ID_LEN);
-        ESP_LOGI(DATA_TAG, "ID of the last Network Exchange Point:");
+        ESP_LOGI(DATA_TAG, "last Network Exchange Point ID:");
         ESP_LOGI(DATA_TAG, "00 00");
-        ESP_LOGI(DATA_TAG, "link quality:");
+        ESP_LOGI(DATA_TAG, "quality:");
         esp_log_buffer_hex(DATA_TAG, temp_info->quality, QUALITY_LEN);
-        ESP_LOGE(DATA_TAG, "*********************************************************************************");
+        ESP_LOGE(DATA_TAG, "*************************************");
 #endif
     }
     else {
@@ -605,19 +602,19 @@ void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
             queue_push(&send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_ANHSP_DETAIL
-            ESP_LOGE(DATA_TAG, "****************************ANHSP info:*****************************************");
-            ESP_LOGI(DATA_TAG, "the type of the packet:ANHSP");
-            ESP_LOGI(DATA_TAG, "ID of the source node:");
+            ESP_LOGE(DATA_TAG, "******************ANHSP***************");
+            ESP_LOGI(DATA_TAG, "type:ANHSP");
+            ESP_LOGI(DATA_TAG, "source ID :");
             esp_log_buffer_hex(DATA_TAG, temp_info->source_id, ID_LEN);
-            ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+            ESP_LOGI(DATA_TAG, "next hop ID:");
             esp_log_buffer_hex(DATA_TAG, temp_info->next_id, ID_LEN);
-            ESP_LOGI(DATA_TAG, "ID of the destination node:");
+            ESP_LOGI(DATA_TAG, "destination ID:");
             esp_log_buffer_hex(DATA_TAG, temp_info->last_root_id, ID_LEN);
-            ESP_LOGI(DATA_TAG, "ID of the last Network Exchange Point:");
+            ESP_LOGI(DATA_TAG, "last Network Exchange Point ID:");
             ESP_LOGI(DATA_TAG, "00 00");
-            ESP_LOGI(DATA_TAG, "link quality:");
+            ESP_LOGI(DATA_TAG, "quality:");
             esp_log_buffer_hex(DATA_TAG, temp_info->quality, QUALITY_LEN);
-            ESP_LOGE(DATA_TAG, "*********************************************************************************");
+            ESP_LOGE(DATA_TAG, "***************************************");
 #endif
 #ifdef PRINT_CONTROL_PACKAGES_STATES
             ESP_LOGE(DATA_TAG, "transfer anhsp");
@@ -632,6 +629,7 @@ void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
 #endif // PRINT_CONTROL_PACKAGES_STATES
         }
     }
+    free(temp_info);
 }
 
 /**
@@ -719,12 +717,10 @@ uint8_t *generate_transfer_hsrrep(p_hsrrep_info hsrrep_info, p_my_info info)
 void resolve_hsrrep(uint8_t *hsrrep_data, p_my_info info)
 {
     p_hsrrep_info temp_info = (p_hsrrep_info)malloc(sizeof(hsrrep_info));
-    uint8_t temp[ANHSP_DATA_LEN];
-    memcpy(temp, hsrrep_data, ANHSP_DATA_LEN);
-    memcpy(temp_info->quality, temp + 2, ID_LEN);
-    memcpy(temp_info->node_id, temp + 4, ID_LEN);
-    memcpy(temp_info->destination_id, temp + 6, ID_LEN);
-    memcpy(temp_info->reverse_next_id, temp + 8, ID_LEN);
+    memcpy(temp_info->quality, hsrrep_data + 2, ID_LEN);
+    memcpy(temp_info->node_id, hsrrep_data + 4, ID_LEN);
+    memcpy(temp_info->destination_id, hsrrep_data + 6, ID_LEN);
+    memcpy(temp_info->reverse_next_id, hsrrep_data + 8, ID_LEN);
     temp_info->distance = hsrrep_data[1];
 
     if (memcmp(temp_info->reverse_next_id, info->my_id, ID_LEN) == 0) {
@@ -742,20 +738,20 @@ void resolve_hsrrep(uint8_t *hsrrep_data, p_my_info info)
                 ESP_LOGE(DATA_TAG, "receive hsrrep");
 #endif // PRINT_CONTROL_PACKAGES_STATES
 #ifdef PRINT_HSRREP_DETAIL
-                ESP_LOGE(DATA_TAG, "****************************HSRREP info:*****************************************");
-                ESP_LOGI(DATA_TAG, "the type of the packet:HSRREP");
-                ESP_LOGI(DATA_TAG, "ID of the source node:");
+                ESP_LOGE(DATA_TAG, "*****************HSRREP***************");
+                ESP_LOGI(DATA_TAG, "type:HSRREP");
+                ESP_LOGI(DATA_TAG, "source ID:");
                 esp_log_buffer_hex(DATA_TAG, info->root_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+                ESP_LOGI(DATA_TAG, "next hop ID:");
                 esp_log_buffer_hex(DATA_TAG, temp_info->reverse_next_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the destination node:");
+                ESP_LOGI(DATA_TAG, "destination ID:");
                 esp_log_buffer_hex(DATA_TAG, temp_info->destination_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the Network Exchange Point:");
+                ESP_LOGI(DATA_TAG, "Network Exchange Point ID:");
                 esp_log_buffer_hex(DATA_TAG, info->root_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "link quality:");
+                ESP_LOGI(DATA_TAG, "quality:");
                 ESP_LOGI(DATA_TAG, "");
-                ESP_LOGI(DATA_TAG, "the number of hops to the Network Exchange Point:%d", info->distance);
-                ESP_LOGE(DATA_TAG, "*********************************************************************************");
+                ESP_LOGI(DATA_TAG, "hops to Network Exchange Point:%d", info->distance);
+                ESP_LOGE(DATA_TAG, "**************************************");
 #endif
             }
         }
@@ -769,18 +765,18 @@ void resolve_hsrrep(uint8_t *hsrrep_data, p_my_info info)
                 ESP_LOGE(DATA_TAG, "transfer hsrrep");
 #endif // PRINT_CONTROL_PACKAGES_STATES
 #ifdef PRINT_HSRREP_DETAIL
-                ESP_LOGE(DATA_TAG, "****************************HSRREP info:*****************************************");
-                ESP_LOGI(DATA_TAG, "the type of the packet:HSRREP");
-                ESP_LOGI(DATA_TAG, "ID of the source node:");
+                ESP_LOGE(DATA_TAG, "*****************HSRREP***************");
+                ESP_LOGI(DATA_TAG, "type:HSRREP");
+                ESP_LOGI(DATA_TAG, "source ID:");
                 esp_log_buffer_hex(DATA_TAG, info->root_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+                ESP_LOGI(DATA_TAG, "next hop ID:");
                 esp_log_buffer_hex(DATA_TAG, temp_info->reverse_next_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the destination node:");
+                ESP_LOGI(DATA_TAG, "destination ID:");
                 esp_log_buffer_hex(DATA_TAG, temp_info->destination_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the Network Exchange Point:");
+                ESP_LOGI(DATA_TAG, "Network Exchange Point ID:");
                 esp_log_buffer_hex(DATA_TAG, info->root_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "the number of hops to the Network Exchange Point:%d", info->distance);
-                ESP_LOGE(DATA_TAG, "*********************************************************************************");
+                ESP_LOGI(DATA_TAG, "hops to the Network Exchange Point:%d", info->distance);
+                ESP_LOGE(DATA_TAG, "**************************************");
 #endif
             }
         }
@@ -790,6 +786,7 @@ void resolve_hsrrep(uint8_t *hsrrep_data, p_my_info info)
         ESP_LOGE(DATA_TAG, "hsrrep next id is not me,do nothing");
 #endif // PRINT_CONTROL_PACKAGES_STATES
     }
+    free(temp_info);
 }
 
 /**
@@ -825,10 +822,8 @@ uint8_t *generate_anrreq(p_my_info info)
 void resolve_anrreq(uint8_t *anrreq_data, p_my_info info)
 {
     p_anrreq_info temp_info = (p_anrreq_info)malloc(sizeof(anrreq_info));
-    uint8_t temp[ANRREQ_DATA_LEN];
-    memcpy(temp, anrreq_data, ANRREQ_DATA_LEN);
-    memcpy(temp_info->quality_threshold, temp, THRESHOLD_LEN);
-    memcpy(temp_info->source_id, temp + 2, ID_LEN);
+    memcpy(temp_info->quality_threshold, anrreq_data, THRESHOLD_LEN);
+    memcpy(temp_info->source_id, anrreq_data + 2, ID_LEN);
     // TODO:序列号
     if (info->is_connected == true) {                                                        // 我是入网节点
         if (memcmp(info->quality_from_me, temp_info->quality_threshold, QUALITY_LEN) >= 0) { // 我满足阈值要求，我回复入网请求回复包
@@ -839,14 +834,15 @@ void resolve_anrreq(uint8_t *anrreq_data, p_my_info info)
             ESP_LOGE(DATA_TAG, "send anrrep");
 #endif // PRINT_CONTROL_PACKAGES_STATES
 #ifdef PRINT_ANRREQ_DETAIL
-            ESP_LOGE(DATA_TAG, "****************************ANRREQ info:*****************************************");
-            ESP_LOGI(DATA_TAG, "the type of the packet:ANRREQ");
-            ESP_LOGI(DATA_TAG, "ID of the source node:");
+            ESP_LOGE(DATA_TAG, "*****************ANRREQ*****************");
+            ESP_LOGI(DATA_TAG, "type:ANRREQ");
+            ESP_LOGI(DATA_TAG, "source ID:");
             esp_log_buffer_hex(DATA_TAG, temp_info->source_id, ID_LEN);
-            ESP_LOGE(DATA_TAG, "*********************************************************************************");
+            ESP_LOGE(DATA_TAG, "****************************************");
 #endif
         }
     }
+    free(temp_info);
 }
 
 /**
@@ -885,12 +881,10 @@ uint8_t *generate_anrrep(p_my_info info, uint8_t *des_id)
 void resolve_anrrep(uint8_t *anrrep_data, p_my_info info, int rssi)
 {
     p_anrrep_info temp_info = (p_anrrep_info)malloc(sizeof(anrrep_info));
-    uint8_t temp[ANRREP_DATA_LEN];
-    memcpy(temp, anrrep_data, ANRREP_DATA_LEN);
-    temp_info->distance = temp[0];
-    memcpy(temp_info->quality, temp + 2, QUALITY_LEN);
-    memcpy(temp_info->node_id, temp + 4, ID_LEN);
-    memcpy(temp_info->destination_id, temp + 6, ID_LEN);
+    temp_info->distance = anrrep_data[0];
+    memcpy(temp_info->quality, anrrep_data + 2, QUALITY_LEN);
+    memcpy(temp_info->node_id, anrrep_data + 4, ID_LEN);
+    memcpy(temp_info->destination_id, anrrep_data + 6, ID_LEN);
     // TODO:序列号
     if (memcmp(info->my_id, temp_info->destination_id, ID_LEN) == 0 && memcmp(info->next_id, temp_info->node_id, ID_LEN) == 0) { // 是发回给我的入网请求回复包,且是我认定的父节点（low_ops中根据链路质量最优选择的）
         if (timer2_running == true && timer2_timeout == false) {                                                                 // 不处理超时后收到的anrrep
@@ -901,16 +895,16 @@ void resolve_anrrep(uint8_t *anrrep_data, p_my_info info, int rssi)
             timer2_running = false; // 定时停止
             insert_neighbor_node(&my_neighbor_table, temp_info->node_id, 0, 1, temp_info->quality, temp_info->distance, rssi, NULL);
 #ifdef PRINT_ANRREP_DETAIL
-            ESP_LOGE(DATA_TAG, "****************************ANRREP info:*****************************************");
-            ESP_LOGI(DATA_TAG, "the type of the packet:ANRREP");
-            ESP_LOGI(DATA_TAG, "the number of hops to the Network Exchange Point:%d", temp_info->distance);
-            ESP_LOGI(DATA_TAG, "ID of the source node:");
+            ESP_LOGE(DATA_TAG, "******************ANRREP****************");
+            ESP_LOGI(DATA_TAG, "type:ANRREP");
+            ESP_LOGI(DATA_TAG, "hops to the Network Exchange Point:%d", temp_info->distance);
+            ESP_LOGI(DATA_TAG, "source ID:");
             esp_log_buffer_hex(DATA_TAG, temp_info->node_id, ID_LEN);
-            ESP_LOGI(DATA_TAG, "ID of the Network Exchange Point:");
+            ESP_LOGI(DATA_TAG, "Network Exchange Point ID:");
             esp_log_buffer_hex(DATA_TAG, info->root_id, ID_LEN);
             ESP_LOGI(DATA_TAG, "link quality_from_neighor_to_cluster:");
             esp_log_buffer_hex(DATA_TAG, temp_info->quality, QUALITY_LEN);
-            ESP_LOGE(DATA_TAG, "*********************************************************************************");
+            ESP_LOGE(DATA_TAG, "****************************************");
 #endif
 #ifdef PRINT_CONTROL_PACKAGES_STATES
             ESP_LOGE(DATA_TAG, "receive anrrep"); // 收到anrrep，开始向root发送入网请求
@@ -926,6 +920,7 @@ void resolve_anrrep(uint8_t *anrrep_data, p_my_info info, int rssi)
 #endif // PRINT_TIMER_STATES
         }
     }
+    free(temp_info);
 }
 
 /**
@@ -960,18 +955,16 @@ uint8_t *generate_rrer(p_my_info info)
 void resolve_rrer(uint8_t *rrer_data, p_my_info info)
 {
     p_rrer_info temp_info = (p_rrer_info)malloc(sizeof(rrer_info));
-    uint8_t temp[RRER_DATA_LEN];
-    memcpy(temp, rrer_data, RRER_DATA_LEN);
-    memcpy(temp_info->node_id, temp + 2, ID_LEN);
-    memcpy(temp_info->destination_id, temp + 4, ID_LEN);
+    memcpy(temp_info->node_id, rrer_data + 2, ID_LEN);
+    memcpy(temp_info->destination_id, rrer_data + 4, ID_LEN);
 #ifdef PRINT_RRER_DETAIL
-    ESP_LOGE(DATA_TAG, "****************************RRER info:*****************************************");
-    ESP_LOGI(DATA_TAG, "the type of the packet:RRER");
-    ESP_LOGI(DATA_TAG, "ID of the source node:");
+    ESP_LOGE(DATA_TAG, "**************RRER************");
+    ESP_LOGI(DATA_TAG, "type:RRER");
+    ESP_LOGI(DATA_TAG, "source ID:");
     esp_log_buffer_hex(DATA_TAG, temp_info->node_id, ID_LEN);
-    ESP_LOGI(DATA_TAG, "ID of the Network Exchange Point:");
+    ESP_LOGI(DATA_TAG, "Network Exchange Point ID:");
     esp_log_buffer_hex(DATA_TAG, info->root_id, ID_LEN);
-    ESP_LOGE(DATA_TAG, "*********************************************************************************");
+    ESP_LOGE(DATA_TAG, "******************************");
 #endif
     if (memcmp(info->next_id, temp_info->node_id, ID_LEN) == 0) { // 是我的父节点,我也入网失效
 #ifdef PRINT_CONTROL_PACKAGES_STATES
@@ -982,7 +975,7 @@ void resolve_rrer(uint8_t *rrer_data, p_my_info info)
         info->quality_from_me[0] = NOR_NODE_INIT_QUALITY;
         memset(info->root_id, 0, ID_LEN);
         memset(info->next_id, 0, ID_LEN);
-        memcpy(adv_data_final_for_rrer, data_match(adv_data_name_7, generate_rrer(info), HEAD_DATA_LEN, RRER_FINAL_DATA_LEN), HEAD_DATA_LEN+RRER_FINAL_DATA_LEN);
+        memcpy(adv_data_final_for_rrer, data_match(adv_data_name_7, generate_rrer(info), HEAD_DATA_LEN, RRER_FINAL_DATA_LEN), HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
         queue_push(&send_queue, adv_data_final_for_rrer, 0, HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
         // 开始计时
@@ -990,6 +983,7 @@ void resolve_rrer(uint8_t *rrer_data, p_my_info info)
         timer3_running = true;
         destroy_down_routing_table(&my_down_routing_table); // 清空我的路由表
     }
+    free(temp_info);
 }
 
 /**
@@ -1119,20 +1113,20 @@ void resolve_message(uint8_t *message_data, p_my_info info)
                     temp_info->infrared[0] = 3;
                     temp_info->illumination[0] = 4;
                     temp_info->smoke[0] = 5;
-                    ESP_LOGE(DATA_TAG, "****************************MESSAGE info:*****************************************");
-                    ESP_LOGI(DATA_TAG, "the type of the packet:MESSAGE");
-                    ESP_LOGI(DATA_TAG, "ID of the source node:");
+                    ESP_LOGE(DATA_TAG, "*****************MESSAGE***************");
+                    ESP_LOGI(DATA_TAG, "type:MESSAGE");
+                    ESP_LOGI(DATA_TAG, "source ID:");
                     esp_log_buffer_hex(DATA_TAG, temp_info->source_id, ID_LEN);
-                    ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+                    ESP_LOGI(DATA_TAG, "next hop ID:");
                     esp_log_buffer_hex(DATA_TAG, temp_info->next_id, ID_LEN);
-                    ESP_LOGI(DATA_TAG, "ID of the destination node:");
+                    ESP_LOGI(DATA_TAG, "destination ID:");
                     esp_log_buffer_hex(DATA_TAG, temp_info->destination_id, ID_LEN);
                     ESP_LOGI(DATA_TAG, "Temperature:%d", temp_info->temperature[0]);
                     ESP_LOGI(DATA_TAG, "Humidity:%d", temp_info->humidity[0]);
                     ESP_LOGI(DATA_TAG, "Infrared:%d", temp_info->infrared[0]);
                     ESP_LOGI(DATA_TAG, "Illumination:%d", temp_info->illumination[0]);
                     ESP_LOGI(DATA_TAG, "Smoke:%d", temp_info->smoke[0]);
-                    ESP_LOGE(DATA_TAG, "*********************************************************************************");
+                    ESP_LOGE(DATA_TAG, "***************************************");
                     if (info->is_root == true) {
                         ESP_LOGE(DATA_TAG, "sending message to openwrt!!");
                     }
@@ -1166,20 +1160,20 @@ void resolve_message(uint8_t *message_data, p_my_info info)
                 ESP_LOGE(DATA_TAG, "receive message from root");
 #endif // PRINT_MASSAGE_PACKAGES_STATES
 #ifdef PRINT_MESSAGE_DETAIL
-                ESP_LOGE(DATA_TAG, "****************************MESSAGE info:*****************************************");
-                ESP_LOGI(DATA_TAG, "the type of the packet:MESSAGE");
-                ESP_LOGI(DATA_TAG, "ID of the source node:");
+                ESP_LOGE(DATA_TAG, "*****************MESSAGE***************");
+                ESP_LOGI(DATA_TAG, "type:MESSAGE");
+                ESP_LOGI(DATA_TAG, "source ID:");
                 esp_log_buffer_hex(DATA_TAG, temp_info->source_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+                ESP_LOGI(DATA_TAG, "next hop ID:");
                 esp_log_buffer_hex(DATA_TAG, temp_info->next_id, ID_LEN);
-                ESP_LOGI(DATA_TAG, "ID of the destination node:");
+                ESP_LOGI(DATA_TAG, "destination ID:");
                 esp_log_buffer_hex(DATA_TAG, temp_info->destination_id, ID_LEN);
                 ESP_LOGI(DATA_TAG, "Temperature:%d", temp_info->temperature[0]);
                 ESP_LOGI(DATA_TAG, "Humidity:%d", temp_info->humidity[0]);
                 ESP_LOGI(DATA_TAG, "Infrared:%d", temp_info->infrared[0]);
                 ESP_LOGI(DATA_TAG, "Illumination:%d", temp_info->illumination[0]);
                 ESP_LOGI(DATA_TAG, "Smoke:%d", temp_info->smoke[0]);
-                ESP_LOGE(DATA_TAG, "*********************************************************************************");
+                ESP_LOGE(DATA_TAG, "***************************************");
 
 #endif
             }
@@ -1189,20 +1183,20 @@ void resolve_message(uint8_t *message_data, p_my_info info)
             ESP_LOGE(DATA_TAG, "receive message,transfering");
 #endif // PRINT_MASSAGE_PACKAGES_STATES
 #ifdef PRINT_MESSAGE_DETAIL
-            ESP_LOGE(DATA_TAG, "****************************MESSAGE info:*****************************************");
-            ESP_LOGI(DATA_TAG, "the type of the packet:MESSAGE");
-            ESP_LOGI(DATA_TAG, "ID of the source node:");
+            ESP_LOGE(DATA_TAG, "*****************MESSAGE***************");
+            ESP_LOGI(DATA_TAG, "type:MESSAGE");
+            ESP_LOGI(DATA_TAG, "source ID:");
             esp_log_buffer_hex(DATA_TAG, temp_info->source_id, ID_LEN);
-            ESP_LOGI(DATA_TAG, "ID of the next hop node:");
+            ESP_LOGI(DATA_TAG, "next hop ID:");
             esp_log_buffer_hex(DATA_TAG, temp_info->next_id, ID_LEN);
-            ESP_LOGI(DATA_TAG, "ID of the destination node:");
+            ESP_LOGI(DATA_TAG, "destination ID:");
             esp_log_buffer_hex(DATA_TAG, temp_info->destination_id, ID_LEN);
             ESP_LOGI(DATA_TAG, "Temperature:%d", temp_info->temperature[0]);
             ESP_LOGI(DATA_TAG, "Humidity:%d", temp_info->humidity[0]);
             ESP_LOGI(DATA_TAG, "Infrared:%d", temp_info->infrared[0]);
             ESP_LOGI(DATA_TAG, "Illumination:%d", temp_info->illumination[0]);
             ESP_LOGI(DATA_TAG, "Smoke:%d", temp_info->smoke[0]);
-            ESP_LOGE(DATA_TAG, "*********************************************************************************");
+            ESP_LOGE(DATA_TAG, "***************************************");
 #endif
             memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_transfer_message(temp_info, info), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
             queue_push(&send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
@@ -1214,6 +1208,7 @@ void resolve_message(uint8_t *message_data, p_my_info info)
         ESP_LOGE(DATA_TAG, "receive message,but not transfer");
 #endif // PRINT_MASSAGE_PACKAGES_STATES
     }
+    free(temp_info);
 }
 
 /**
@@ -1257,13 +1252,13 @@ void resolve_block_message(uint8_t *block_message_data, p_my_info info)
     ESP_LOGE(DATA_TAG, "receive block_message");
 #endif // PRINT_CONTROL_PACKAGES_STATES
 #ifdef PRINT_BLOCK_MESSAGE_DETAIL
-    ESP_LOGE(DATA_TAG, "****************************BLOCK MESSAGE info:***********************************");
-    ESP_LOGI(DATA_TAG, "the type of the packet:BLOCK MESSAGE");
-    ESP_LOGI(DATA_TAG, "ID of the source node:");
+    ESP_LOGE(DATA_TAG, "******************BLOCK MESSAGE**************");
+    ESP_LOGI(DATA_TAG, "type:BLOCK");
+    ESP_LOGI(DATA_TAG, "source ID:");
     esp_log_buffer_hex(DATA_TAG, temp_info->node_id, ID_LEN);
     // ESP_LOGI(DATA_TAG, "ID of the destination node:");
     // esp_log_buffer_hex(DATA_TAG, temp_info->destination_id, ID_LEN);
-    ESP_LOGE(DATA_TAG, "*********************************************************************************");
+    ESP_LOGE(DATA_TAG, "*********************************************");
 #endif
     if (memcmp(info->next_id, temp_info->node_id, ID_LEN) == 0) { // 是我的父节点,我也入网失效
 
@@ -1283,4 +1278,5 @@ void resolve_block_message(uint8_t *block_message_data, p_my_info info)
         //             }
         //         }
     }
+    free(temp_info);
 }

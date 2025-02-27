@@ -238,10 +238,10 @@ uint8_t *get_down_routing_next_id(p_down_routing_table table, uint8_t *des_id)
 void print_down_routing_table(p_down_routing_table table)
 {
     p_down_routing_note temp = table->head;
-    ESP_LOGE(DOWN_ROUTING_TAG, "****************************Start printing down_routing table:***********************************************");
+    ESP_LOGE(DOWN_ROUTING_TAG, "*******************down_routing table:******************");
     while (temp != NULL) {
-        //ESP_LOGI(DOWN_ROUTING_TAG, "source_id:");
-        //esp_log_buffer_hex(DOWN_ROUTING_TAG, temp->source_id, ID_LEN);
+        // ESP_LOGI(DOWN_ROUTING_TAG, "source_id:");
+        // esp_log_buffer_hex(DOWN_ROUTING_TAG, temp->source_id, ID_LEN);
         ESP_LOGI(DOWN_ROUTING_TAG, "destination_id:");
         esp_log_buffer_hex(DOWN_ROUTING_TAG, temp->destination_id, ID_LEN);
         ESP_LOGI(DOWN_ROUTING_TAG, "reverse_next_id:");
@@ -250,7 +250,7 @@ void print_down_routing_table(p_down_routing_table table)
         // ESP_LOGI(DOWN_ROUTING_TAG, "count:%d", temp->count);
         temp = temp->next;
     }
-    ESP_LOGE(DOWN_ROUTING_TAG, "****************************Printing down_routing table is finished *****************************************");
+    ESP_LOGE(DOWN_ROUTING_TAG, "********************************************************");
 }
 
 /**

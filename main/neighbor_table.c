@@ -632,7 +632,7 @@ void set_my_next_id_quality_and_distance(p_neighbor_table table, p_my_info info)
 void print_neighbor_table(p_neighbor_table table)
 {
     p_neighbor_note temp = table->head;
-    ESP_LOGI(NEIGHBOR_TAG, "****************************Start printing neighbor table:***********************************************");
+    ESP_LOGI(NEIGHBOR_TAG, "************neighbor table:******************");
     while (temp != NULL) {
         ESP_LOGI(NEIGHBOR_TAG, "id:");
         esp_log_buffer_hex(NEIGHBOR_TAG, temp->id, ID_LEN);
@@ -653,7 +653,7 @@ void print_neighbor_table(p_neighbor_table table)
         // ESP_LOGI(NEIGHBOR_TAG, "count:%d", temp->count);
         temp = temp->next;
     }
-    ESP_LOGI(NEIGHBOR_TAG, "****************************Printing neighbor table is finished *****************************************");
+    ESP_LOGI(NEIGHBOR_TAG, "********************************************");
 }
 
 /**

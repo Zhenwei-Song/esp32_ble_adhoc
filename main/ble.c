@@ -2,7 +2,7 @@
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2023-09-22 17:13:32
  * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
- * @LastEditTime: 2025-02-26 20:49:09
+ * @LastEditTime: 2025-02-27 15:46:56
  * @FilePath: \esp32_ble_positioning\main\ble.c
  * @Description:
  * 实现了广播与扫描同时进行（基于gap层）
@@ -24,11 +24,13 @@
  * 明细了项目测试时使用到的打印信息
  * NOTE:删除基于adtype中name的判断接收包的方法，改为0xff增加通用性
  * 使用动态广播包长度
+ * 增加led显示
  * Copyright (c) 2024 by Zhenwei Song, All Rights Reserved.
  */
 
 #include "ble.h"
 #include "ble_uart.h"
+#include "led.h"
 #include "macro_def.h"
 
 #ifdef GPIO
@@ -137,7 +139,7 @@ static void message_task(void *pvParameters)
 static void ble_down_routing_table_task(void *pvParameters)
 {
     bool print_my_info = false;
-    ESP_LOGW(DATA_TAG, "*************my info:***************");
+    ESP_LOGW(DATA_TAG, "*************my info:***********");
     ESP_LOGI(DATA_TAG, "my_id:");
     esp_log_buffer_hex(DATA_TAG, my_information.my_id, ID_LEN);
     ESP_LOGI(DATA_TAG, "root_id:");
@@ -152,7 +154,7 @@ static void ble_down_routing_table_task(void *pvParameters)
     ESP_LOGI(DATA_TAG, "quality_from_me_to_neighbor:");
     esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me_to_neighbor, QUALITY_LEN);
     ESP_LOGI(DATA_TAG, "update:%d", my_information.update);
-    ESP_LOGW(DATA_TAG, "************************************");
+    ESP_LOGW(DATA_TAG, "*********************************");
     while (1) {
         refresh_cnt_neighbor_table(&my_neighbor_table, &my_information);
 #ifndef SELF_ROOT
@@ -217,7 +219,7 @@ static void ble_down_routing_table_task(void *pvParameters)
 #endif
 #ifdef PRINT_MY_INFO
         if (print_my_info == true) {
-            ESP_LOGW(DATA_TAG, "****************************Start printing my info:***********************************************");
+            ESP_LOGW(DATA_TAG, "*************my info:***********");
             ESP_LOGI(DATA_TAG, "my_id:");
             esp_log_buffer_hex(DATA_TAG, my_information.my_id, ID_LEN);
             ESP_LOGI(DATA_TAG, "root_id:");
@@ -232,7 +234,7 @@ static void ble_down_routing_table_task(void *pvParameters)
             ESP_LOGI(DATA_TAG, "quality_from_me_to_neighbor:");
             esp_log_buffer_hex(DATA_TAG, my_information.quality_from_me_to_neighbor, QUALITY_LEN);
             ESP_LOGI(DATA_TAG, "update:%d", my_information.update);
-            ESP_LOGW(DATA_TAG, "****************************Printing my info is finished *****************************************");
+            ESP_LOGW(DATA_TAG, "*********************************");
             print_my_info = false;
         }
 
@@ -274,6 +276,8 @@ static void ble_rec_data_task(void *pvParameters)
             if (!queue_is_empty(&rec_queue)) {
                 rec_data = queue_pop(&rec_queue, &rec_data_len);
                 if (rec_data != NULL) {
+                    led_green();
+                    xSemaphoreGive(xCountingSemaphore_led);
                     get_data = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, &get_len);
                     switch (get_data[0]) {
                     case TYPE_PHELLO:
@@ -402,9 +406,11 @@ static void ble_send_data_task(void *pvParameters)
             if (!queue_is_empty(&send_queue)) {
                 send_data = queue_pop(&send_queue, &data_len);
                 if (send_data != NULL) {
+                    led_blue();
                     esp_ble_gap_config_adv_data_raw(send_data, data_len);
                     esp_ble_gap_start_advertising(&adv_params);
                     free(send_data);
+                    led_off();
                 }
             }
         }
@@ -452,6 +458,22 @@ static void ble_timer2_check_task(void *pvParameters)
 #ifdef PRINT_TIMER_STATES
             printf("timer2 timeout ,restart\n");
 #endif
+        }
+    }
+}
+
+/**
+ * @description: 用于关闭led
+ * @param {void} *pvParameters
+ * @return {*}
+ */
+static void ble_led_task(void *pvParameters)
+{
+    while (1) {
+        if (xSemaphoreTake(xCountingSemaphore_led, portMAX_DELAY) == pdTRUE) // 得到了信号量
+        {
+            vTaskDelay(pdMS_TO_TICKS(LED_TIME));
+            led_off();
         }
     }
 }
@@ -816,27 +838,25 @@ void app_main(void)
     xCountingSemaphore_receive = xSemaphoreCreateCounting(200, 0);
     xCountingSemaphore_timeout1 = xSemaphoreCreateCounting(200, 0);
     xCountingSemaphore_timeout2 = xSemaphoreCreateCounting(200, 0);
+    xCountingSemaphore_led = xSemaphoreCreateCounting(10, 0);
 
     esp_ble_gap_set_scan_params(&ble_scan_params);
     esp_ble_gap_start_scanning(duration);
     // esp_ble_gap_start_advertising(&adv_params);
 
-    xTaskCreate(hello_task, "hello_task", 1024, NULL, 2, NULL);
+    xTaskCreate(hello_task, "hello_task", 1024, NULL, 1, NULL);
 #ifndef SELF_ROOT
 #ifdef SENGDING_MESSAGE_PERIODIC
     xTaskCreate(message_task, "message_task", 1024, NULL, 2, NULL);
 #endif
 #endif
     xTaskCreate(ble_down_routing_table_task, "ble_down_routing_table_task", 4096, NULL, 5, NULL);
-    xTaskCreate(ble_send_data_task, "ble_send_data_task", 2048, NULL, 3, NULL);
+    xTaskCreate(ble_send_data_task, "ble_send_data_task", 4096, NULL, 3, NULL);
     xTaskCreate(ble_rec_data_task, "ble_rec_data_task", 4096, NULL, 4, NULL);
 #ifdef BLE_TIMER
-    xTaskCreate(ble_timer1_check_task, "ble_timer1_check_task", 1024, NULL, 4, NULL);
-    xTaskCreate(ble_timer2_check_task, "ble_timer2_check_task", 1024, NULL, 4, NULL);
+    xTaskCreate(ble_timer1_check_task, "ble_timer1_check_task", 1024, NULL, 3, NULL);
+    xTaskCreate(ble_timer2_check_task, "ble_timer2_check_task", 1024, NULL, 3, NULL);
     ble_timer_init();
-#ifndef SELF_ROOT
-    // esp_timer_start_periodic(ble_time4_timer, TIME3_TIMER_PERIOD);
-#endif
 #endif
 #if defined PRINT_MESSAGE_FOR_OPENWRT || defined PRINT_RSSI
     ble_uart_init();
@@ -846,5 +866,7 @@ void app_main(void)
 #endif // BUTTION
 #ifdef THROUGHPUT
     xTaskCreate(throughput_task, "throughput_task", 4096, NULL, 5, NULL);
-#endif // THROUGHPUT
+#endif               // THROUGHPUT
+    configure_led(); // 初始化led(esp32-s3)
+    xTaskCreate(ble_led_task, "ble_led_task", 4096, NULL, 1, NULL);
 }

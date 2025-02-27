@@ -250,7 +250,7 @@ uint8_t *get_up_routing_next_id(p_up_routing_table table, uint8_t *des_id)
 void print_up_routing_table(p_up_routing_table table)
 {
     p_up_routing_note temp = table->head;
-    ESP_LOGE(UP_ROUTING_TAG, "****************************Start printing up_routing table:***********************************************");
+    ESP_LOGE(UP_ROUTING_TAG, "****************up_routing table:***************");
     while (temp != NULL) {
         ESP_LOGI(UP_ROUTING_TAG, "destination_id:");
         esp_log_buffer_hex(UP_ROUTING_TAG, temp->destination_id, ID_LEN);
@@ -260,7 +260,7 @@ void print_up_routing_table(p_up_routing_table table)
         // ESP_LOGI(UP_ROUTING_TAG, "count:%d", temp->count);
         temp = temp->next;
     }
-    ESP_LOGE(UP_ROUTING_TAG, "****************************Printing up_routing table is finished *****************************************");
+    ESP_LOGE(UP_ROUTING_TAG, "************************************************");
 }
 
 /**

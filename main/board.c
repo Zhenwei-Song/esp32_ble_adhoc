@@ -1,9 +1,9 @@
 /*
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2023-10-12 11:16:49
- * @LastEditors: Zhenwei-Song zhenwei.song@qq.com
- * @LastEditTime: 2023-10-30 21:17:32
- * @FilePath: \vscode_settinge:\github\esp32\esp_ble_mesh\ble_mesh_node\onoff_client\main\board.c
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-02-27 11:10:14
+ * @FilePath: \esp32_ble_positioning\main\board.c
  * @Description: 仅供学习交流使用
  * Copyright (c) 2023 by Zhenwei Song, All Rights Reserved.
  */
