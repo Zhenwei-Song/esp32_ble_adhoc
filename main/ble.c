@@ -2,8 +2,8 @@
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2023-09-22 17:13:32
  * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
- * @LastEditTime: 2025-02-27 15:46:56
- * @FilePath: \esp32_ble_positioning\main\ble.c
+ * @LastEditTime: 2025-03-04 17:10:12
+ * @FilePath: \esp32_ble_adhoc\main\ble.c
  * @Description:
  * 实现了广播与扫描同时进行（基于gap层）
  * 添加了GPIO的测试内容（由宏定义控制是否启动）
@@ -276,7 +276,9 @@ static void ble_rec_data_task(void *pvParameters)
             if (!queue_is_empty(&rec_queue)) {
                 rec_data = queue_pop(&rec_queue, &rec_data_len);
                 if (rec_data != NULL) {
+#ifdef SOC_ESP32S3_SUPPORTED
                     led_green();
+#endif
                     xSemaphoreGive(xCountingSemaphore_led);
                     get_data = esp_ble_resolve_adv_data(rec_data, ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE, &get_len);
                     switch (get_data[0]) {
@@ -406,11 +408,19 @@ static void ble_send_data_task(void *pvParameters)
             if (!queue_is_empty(&send_queue)) {
                 send_data = queue_pop(&send_queue, &data_len);
                 if (send_data != NULL) {
+#ifdef SOC_ESP32S3_SUPPORTED
                     led_blue();
+#else
+                    gpio_set_level(BLINK_GPIO, 1);
+#endif
                     esp_ble_gap_config_adv_data_raw(send_data, data_len);
                     esp_ble_gap_start_advertising(&adv_params);
                     free(send_data);
+#ifdef SOC_ESP32S3_SUPPORTED
                     led_off();
+#else
+                    gpio_set_level(BLINK_GPIO, 0);
+#endif
                 }
             }
         }
@@ -516,6 +526,10 @@ static void ble_scan_task(void *pvParameters)
     }
 }
 #endif
+
+static void set_ble_tx_power() {
+    esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9); // 设置最大 9 dBm 功率
+}
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
@@ -833,6 +847,7 @@ void app_main(void)
 #ifdef QUEUE
     all_queue_init();
 #endif // QUEUE
+    set_ble_tx_power();
 
     xCountingSemaphore_send = xSemaphoreCreateCounting(200, 0);
     xCountingSemaphore_receive = xSemaphoreCreateCounting(200, 0);
@@ -866,7 +881,9 @@ void app_main(void)
 #endif // BUTTION
 #ifdef THROUGHPUT
     xTaskCreate(throughput_task, "throughput_task", 4096, NULL, 5, NULL);
-#endif               // THROUGHPUT
-    configure_led(); // 初始化led(esp32-s3)
+#endif // THROUGHPUT
+    configure_led();
+#ifdef SOC_ESP32S3_SUPPORTED
     xTaskCreate(ble_led_task, "ble_led_task", 4096, NULL, 1, NULL);
+#endif
 }

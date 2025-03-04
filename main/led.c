@@ -18,6 +18,7 @@ SemaphoreHandle_t xCountingSemaphore_led;
 
 void configure_led(void)
 {
+#ifdef SOC_ESP32S3_SUPPORTED
     ESP_LOGI(LED_TAG, "Example configured to blink addressable LED!");
     /* LED strip initialization with the GPIO and pixels number*/
     led_strip_config_t strip_config = {
@@ -31,31 +32,36 @@ void configure_led(void)
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     /* Set all LED off to clear all pixels */
     led_strip_clear(led_strip);
+#else
+    // GPIO初始化
+    gpio_reset_pin(BLINK_GPIO); // #define  2
+    // 设置GPIO口的模式为输出模式
+    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT); // 配置模式
+#endif
 }
 
 void led_red(void)
 {
-        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-        led_strip_set_pixel(led_strip, 0, 255, 0, 0);
-        /* Refresh the strip to send data */
-        led_strip_refresh(led_strip);
+    /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
+    led_strip_set_pixel(led_strip, 0, 255, 0, 0);
+    /* Refresh the strip to send data */
+    led_strip_refresh(led_strip);
 }
 
 void led_green(void)
 {
-        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-        led_strip_set_pixel(led_strip, 0, 0, 50, 0);
-        /* Refresh the strip to send data */
-        led_strip_refresh(led_strip);
-
+    /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
+    led_strip_set_pixel(led_strip, 0, 0, 50, 0);
+    /* Refresh the strip to send data */
+    led_strip_refresh(led_strip);
 }
 
 void led_blue(void)
 {
-        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-        led_strip_set_pixel(led_strip, 0, 0, 0, 255);
-        /* Refresh the strip to send data */
-        led_strip_refresh(led_strip);
+    /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
+    led_strip_set_pixel(led_strip, 0, 0, 0, 255);
+    /* Refresh the strip to send data */
+    led_strip_refresh(led_strip);
 }
 
 void led_off(void)

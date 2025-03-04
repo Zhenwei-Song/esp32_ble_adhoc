@@ -1,3 +1,12 @@
+/*
+ * @Author: Zhenwei Song zhenwei_song@foxmail.com
+ * @Date: 2024-04-16 15:58:43
+ * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
+ * @LastEditTime: 2025-03-03 19:12:33
+ * @FilePath: \esp32_ble_adhoc\main\ble_uart.h
+ * @Description: 仅供学习交流使用
+ * Copyright (c) 2025 by Zhenwei Song, All Rights Reserved.
+ */
 #ifndef BLE_UART_H_
 #define BLE_UART_H_
 
@@ -13,7 +22,7 @@
 
 extern int RX_BUF_SIZE;
 
-#define TXD_PIN (GPIO_NUM_2)
+#define TXD_PIN (GPIO_NUM_3)
 #define RXD_PIN (GPIO_NUM_4)
 
 void ble_uart_init(void);

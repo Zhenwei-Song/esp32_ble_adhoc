@@ -2,13 +2,15 @@
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2024-01-20 09:47:36
  * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
- * @LastEditTime: 2025-02-26 17:23:18
- * @FilePath: \esp32_ble_positioning\main\macro_def.h
+ * @LastEditTime: 2025-03-03 18:50:48
+ * @FilePath: \esp32_ble_adhoc\main\macro_def.h
  * @Description: 仅供学习交流使用
  * Copyright (c) 2024 by Zhenwei Song, All Rights Reserved.
  */
 #ifndef MACRO_DEF_H_
 #define MACRO_DEF_H_
+
+#include <soc/soc_caps.h>
 
 // #define SELF_ROOT // 自己是root
 
@@ -38,14 +40,14 @@
 //  #define PRINT_UP_ROUTING_TABLE_STATES
 //  #define PRINT_DOWN_ROUTING_TABLE_STATES
 
-#define PRINT_HELLO_DETAIL
-//  #define PRINT_ANRREQ_DETAIL
-//  #define PRINT_ANRREP_DETAIL
-//  #define PRINT_ANHSP_DETAIL
-//  #define PRINT_RRER_DETAIL
-//  #define PRINT_HSRREP_DETAIL
-//  #define PRINT_MESSAGE_DETAIL
-//  #define PRINT_BLOCK_MESSAGE_DETAIL
+// #define PRINT_HELLO_DETAIL
+//   #define PRINT_ANRREQ_DETAIL
+//   #define PRINT_ANRREP_DETAIL
+//   #define PRINT_ANHSP_DETAIL
+//   #define PRINT_RRER_DETAIL
+//   #define PRINT_HSRREP_DETAIL
+//   #define PRINT_MESSAGE_DETAIL
+//   #define PRINT_BLOCK_MESSAGE_DETAIL
 
 #define ONLY_SEND_HELLO
 

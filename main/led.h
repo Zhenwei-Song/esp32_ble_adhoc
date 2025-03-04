@@ -16,9 +16,14 @@
 #include "freertos/task.h"
 #include "led_strip.h"
 #include "sdkconfig.h"
+#include "macro_def.h"
 #include <stdio.h>
 
+#ifdef SOC_ESP32S3_SUPPORTED
 #define CONFIG_BLINK_GPIO 48
+#else
+#define CONFIG_BLINK_GPIO 2
+#endif
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 
 extern led_strip_handle_t led_strip;
