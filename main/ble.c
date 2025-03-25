@@ -2,7 +2,7 @@
  * @Author: Zhenwei Song zhenwei.song@qq.com
  * @Date: 2023-09-22 17:13:32
  * @LastEditors: Zhenwei Song zhenwei_song@foxmail.com
- * @LastEditTime: 2025-03-04 17:10:12
+ * @LastEditTime: 2025-03-25 17:16:18
  * @FilePath: \esp32_ble_adhoc\main\ble.c
  * @Description:
  * 实现了广播与扫描同时进行（基于gap层）
@@ -84,8 +84,10 @@ static uint64_t current_time = 0;
 static uint64_t cal_len = 0;
 #endif // THROUGHPUT
 
-queue rec_queue;
-queue send_queue;
+// queue rec_queue;
+// queue send_queue;
+QueueHandle_t rec_queue;
+QueueHandle_t send_queue;
 
 /**
  * @description: 定时发送hello包
@@ -96,7 +98,7 @@ static void hello_task(void *pvParameters)
 {
     while (1) {
         memcpy(adv_data_final_for_hello, data_match(adv_data_name_7, generate_phello(&my_information), HEAD_DATA_LEN, PHELLO_FINAL_DATA_LEN), HEAD_DATA_LEN + PHELLO_FINAL_DATA_LEN);
-        queue_push(&send_queue, adv_data_final_for_hello, 0, HEAD_DATA_LEN + PHELLO_FINAL_DATA_LEN);
+        queue_push(send_queue, adv_data_final_for_hello, 0, HEAD_DATA_LEN + PHELLO_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
         // printf("sending hello\n");
         vTaskDelay(pdMS_TO_TICKS(HELLO_TIME));
@@ -112,7 +114,7 @@ static void message_task(void *pvParameters)
     while (1) {
         temp_message[23] = i;
         memcpy(adv_data_final_for_message, data_match(adv_data_name_7, temp_message, HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), FINAL_DATA_LEN);
-        queue_push(&send_queue, adv_data_final_for_message, 0);
+        queue_push(send_queue, adv_data_final_for_message, 0);
         xSemaphoreGive(xCountingSemaphore_send);
         i++;
         if (i == 15)
@@ -123,7 +125,7 @@ static void message_task(void *pvParameters)
     while (1) {
         if (my_information.is_connected == true) {
             memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_message(adv_data_message_16, &my_information, NULL), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
+            queue_push(send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
             vTaskDelay(pdMS_TO_TICKS(MESSAGE_TIME));
         }
@@ -213,7 +215,7 @@ static void ble_down_routing_table_task(void *pvParameters)
         if (refresh_flag_for_neighbor == true) { // 状态改变，立即发送hello
             refresh_flag_for_neighbor = false;
             memcpy(adv_data_final_for_hello, data_match(adv_data_name_7, generate_phello(&my_information), HEAD_DATA_LEN, PHELLO_FINAL_DATA_LEN), FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_hello, 0);
+            queue_push(send_queue, adv_data_final_for_hello, 0);
             xSemaphoreGive(xCountingSemaphore_send);
         }
 #endif
@@ -273,8 +275,9 @@ static void ble_rec_data_task(void *pvParameters)
     while (1) {
         if (xSemaphoreTake(xCountingSemaphore_receive, portMAX_DELAY) == pdTRUE) // 得到了信号量
         {
-            if (!queue_is_empty(&rec_queue)) {
-                rec_data = queue_pop(&rec_queue, &rec_data_len);
+            // if (!queue_is_empty(rec_queue)) {
+            if (1) {
+                rec_data = queue_pop(rec_queue, &rec_data_len);
                 if (rec_data != NULL) {
 #ifdef SOC_ESP32S3_SUPPORTED
                     led_green();
@@ -393,8 +396,8 @@ static void ble_send_data_task(void *pvParameters)
     uint8_t data_len;
     while (1) {
 #if 0
-        if (!queue_is_empty(&send_queue)) {
-            send_data = queue_pop(&send_queue);
+        if (!queue_is_empty(send_queue)) {
+            send_data = queue_pop(send_queue);
             if (send_data != NULL) {
                 esp_ble_gap_config_adv_data_raw(send_data, 31);
                 esp_ble_gap_start_advertising(&adv_params);
@@ -405,8 +408,9 @@ static void ble_send_data_task(void *pvParameters)
 #else
         if (xSemaphoreTake(xCountingSemaphore_send, portMAX_DELAY) == pdTRUE) // 得到了信号量
         {
-            if (!queue_is_empty(&send_queue)) {
-                send_data = queue_pop(&send_queue, &data_len);
+            // if (!queue_is_empty(send_queue)) {
+            if (1) {
+                send_data = queue_pop(send_queue, &data_len);
                 if (send_data != NULL) {
 #ifdef SOC_ESP32S3_SUPPORTED
                     led_blue();
@@ -441,7 +445,7 @@ static void ble_timer1_check_task(void *pvParameters)
         if (xSemaphoreTake(xCountingSemaphore_timeout1, portMAX_DELAY) == pdTRUE) // 得到了信号量
         {
             memcpy(adv_data_final_for_anrreq, data_match(adv_data_name_7, generate_anrreq(&my_information), HEAD_DATA_LEN, ANRREQ_FINAL_DATA_LEN), HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anrreq, 0, HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN);
+            queue_push(send_queue, adv_data_final_for_anrreq, 0, HEAD_DATA_LEN + ANRREQ_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
             // 开始计时
             esp_timer_start_once(ble_time2_timer, TIME2_TIMER_PERIOD);
@@ -527,7 +531,8 @@ static void ble_scan_task(void *pvParameters)
 }
 #endif
 
-static void set_ble_tx_power() {
+static void set_ble_tx_power()
+{
     esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9); // 设置最大 9 dBm 功率
 }
 
@@ -668,15 +673,15 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                         is_filtered = false;
                     }
                     else {
-                        queue_push_with_check(&rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi, 31);
+                        queue_push(rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi, 31);
                         xSemaphoreGive(xCountingSemaphore_receive);
                     }
 #else
                     // printf("get raw message\n");
-                    queue_push_with_check(&rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi, 31);
+                    queue_push(rec_queue, scan_result->scan_rst.ble_adv, scan_result->scan_rst.rssi, 31);
                     xSemaphoreGive(xCountingSemaphore_receive);
 #endif // FILTER
-       //  queue_print(&rec_queue);
+       //  queue_print(rec_queue);
 #endif // ndef THROUGHPUT
 
 #ifdef GPIO
@@ -712,9 +717,13 @@ static void down_routing_table_init(void)
 #ifdef QUEUE
 static void all_queue_init(void)
 {
-    queue_init(&rec_queue);
-    queue_init(&send_queue);
+    // queue_init(rec_queue);
+    // queue_init(send_queue);
+
+    queue_init(rec_queue, 20, queue_data_length);
+    queue_init(send_queue, 20, queue_data_length);
 }
+
 #endif // QUEUE
 
 #ifdef BUTTON
@@ -728,13 +737,13 @@ void button_ops()
 #ifdef BUTTON_MY_MESSAGE
     ESP_LOGE(DATA_TAG, "SENDING MY MESSAGE");
     memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_message(adv_data_message_16, &my_information, NULL), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
-    queue_push(&send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
+    queue_push(send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
     xSemaphoreGive(xCountingSemaphore_send);
 #endif
 #ifdef BUTTON_BLOCK_MESSAGE
     // ESP_LOGE(DATA_TAG, "SENDING BLOCK MESSAGE");
     memcpy(adv_data_final_for_block_message, data_match(adv_data_name_7, generate_block_message(&my_information), HEAD_DATA_LEN, BLOCK_MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + BLOCK_MESSAGE_FINAL_DATA_LEN);
-    queue_push(&send_queue, adv_data_final_for_block_message, 0, HEAD_DATA_LEN + BLOCK_MESSAGE_FINAL_DATA_LEN);
+    queue_push(send_queue, adv_data_final_for_block_message, 0, HEAD_DATA_LEN + BLOCK_MESSAGE_FINAL_DATA_LEN);
     xSemaphoreGive(xCountingSemaphore_send);
 #endif
 #ifdef PRINT_RSSI

@@ -573,7 +573,7 @@ void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
     if (info->is_root) {                                                                                                                                                                          // 根节点 回复hsrrep
         insert_down_routing_node(&my_down_routing_table, info->root_id, temp_info->source_id, temp_info->node_id, temp_info->distance + 1);                                                       // 把它加入到自己的路由表里
         memcpy(adv_data_final_for_hsrrep, data_match(adv_data_name_7, generate_hsrrep(info, temp_info->source_id), HEAD_DATA_LEN, HSRREP_FINAL_DATA_LEN), HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN); // 发送入网请求的节点成了根节点发送入网请求回复包的目的节点
-        queue_push(&send_queue, adv_data_final_for_hsrrep, 0, HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
+        queue_push(send_queue, adv_data_final_for_hsrrep, 0, HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
         ESP_LOGE(DATA_TAG, "response hsrrep");
@@ -599,7 +599,7 @@ void resolve_anhsp(uint8_t *anhsp_data, p_my_info info)
             insert_down_routing_node(&my_down_routing_table, info->root_id, temp_info->source_id, temp_info->node_id, temp_info->distance + 1); // 把它加入到自己的路由表里，自己成了它的父节点（父节点的选择由子节点根据链路质量确定）
             // TODO:未考虑路由表的维护
             memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_transfer_anhsp(temp_info, info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
+            queue_push(send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_ANHSP_DETAIL
             ESP_LOGE(DATA_TAG, "******************ANHSP***************");
@@ -759,7 +759,7 @@ void resolve_hsrrep(uint8_t *hsrrep_data, p_my_info info)
             if (info->is_connected == true) { // 由入网的节点转发
                 // insert_down_routing_node(&my_down_routing_table, info->root_id, temp_info->destination_id, temp_info->node_id, temp_info->distance + 1);
                 memcpy(adv_data_final_for_hsrrep, data_match(adv_data_name_7, generate_transfer_hsrrep(temp_info, info), HEAD_DATA_LEN, HSRREP_FINAL_DATA_LEN), HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
-                queue_push(&send_queue, adv_data_final_for_hsrrep, 0, HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
+                queue_push(send_queue, adv_data_final_for_hsrrep, 0, HEAD_DATA_LEN + HSRREP_FINAL_DATA_LEN);
                 xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
                 ESP_LOGE(DATA_TAG, "transfer hsrrep");
@@ -828,7 +828,7 @@ void resolve_anrreq(uint8_t *anrreq_data, p_my_info info)
     if (info->is_connected == true) {                                                        // 我是入网节点
         if (memcmp(info->quality_from_me, temp_info->quality_threshold, QUALITY_LEN) >= 0) { // 我满足阈值要求，我回复入网请求回复包
             memcpy(adv_data_final_for_anrrep, data_match(adv_data_name_7, generate_anrrep(info, temp_info->source_id), HEAD_DATA_LEN, ANRREP_FINAL_DATA_LEN), HEAD_DATA_LEN + ANRREP_FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anrrep, 0, HEAD_DATA_LEN + ANRREP_FINAL_DATA_LEN);
+            queue_push(send_queue, adv_data_final_for_anrrep, 0, HEAD_DATA_LEN + ANRREP_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
 #ifdef PRINT_CONTROL_PACKAGES_STATES
             ESP_LOGE(DATA_TAG, "send anrrep");
@@ -910,7 +910,7 @@ void resolve_anrrep(uint8_t *anrrep_data, p_my_info info, int rssi)
             ESP_LOGE(DATA_TAG, "receive anrrep"); // 收到anrrep，开始向root发送入网请求
 #endif                                            // PRINT_CONTROL_PACKAGES_STATES
             memcpy(adv_data_final_for_anhsp, data_match(adv_data_name_7, generate_anhsp(info), HEAD_DATA_LEN, ANHSP_FINAL_DATA_LEN), HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
+            queue_push(send_queue, adv_data_final_for_anhsp, 0, HEAD_DATA_LEN + ANHSP_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
             // 开始计时
             esp_timer_start_once(ble_time1_timer, TIME1_TIMER_PERIOD);
@@ -976,7 +976,7 @@ void resolve_rrer(uint8_t *rrer_data, p_my_info info)
         memset(info->root_id, 0, ID_LEN);
         memset(info->next_id, 0, ID_LEN);
         memcpy(adv_data_final_for_rrer, data_match(adv_data_name_7, generate_rrer(info), HEAD_DATA_LEN, RRER_FINAL_DATA_LEN), HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
-        queue_push(&send_queue, adv_data_final_for_rrer, 0, HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
+        queue_push(send_queue, adv_data_final_for_rrer, 0, HEAD_DATA_LEN + RRER_FINAL_DATA_LEN);
         xSemaphoreGive(xCountingSemaphore_send);
         // 开始计时
         esp_timer_start_once(ble_time3_timer, TIME3_TIMER_PERIOD);
@@ -1133,7 +1133,7 @@ void resolve_message(uint8_t *message_data, p_my_info info)
 #endif
 #if 0
         memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_message(adv_data_response_16, info, temp_info->source_id), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), FINAL_DATA_LEN);
-                    queue_push(&send_queue, adv_data_final_for_message, 0);
+                    queue_push(send_queue, adv_data_final_for_message, 0);
                     xSemaphoreGive(xCountingSemaphore_send);
 #endif
 #ifdef PRINT_MESSAGE_FOR_OPENWRT
@@ -1199,7 +1199,7 @@ void resolve_message(uint8_t *message_data, p_my_info info)
             ESP_LOGE(DATA_TAG, "***************************************");
 #endif
             memcpy(adv_data_final_for_message, data_match(adv_data_name_7, generate_transfer_message(temp_info, info), HEAD_DATA_LEN, MESSAGE_FINAL_DATA_LEN), HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
-            queue_push(&send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
+            queue_push(send_queue, adv_data_final_for_message, 0, HEAD_DATA_LEN + MESSAGE_FINAL_DATA_LEN);
             xSemaphoreGive(xCountingSemaphore_send);
         }
     }

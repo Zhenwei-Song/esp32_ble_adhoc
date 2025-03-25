@@ -42,7 +42,9 @@
 			"string_view": "c",
 			"ranges": "c",
 			"span": "c",
-			"iot_button.h": "c"
+			"iot_button.h": "c",
+			"compare": "c",
+			"format": "c"
 		},
 		"todo-tree.tree.scanMode": "current file"
 	}
